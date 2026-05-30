@@ -2,7 +2,6 @@
 
 from datetime import datetime, timedelta, timezone
 
-import numpy as np
 import pytest
 
 from pk_tracker.core import models

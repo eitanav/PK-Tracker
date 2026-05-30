@@ -18,7 +18,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
-import numpy as np
 from scipy.optimize import brentq
 
 from . import models
