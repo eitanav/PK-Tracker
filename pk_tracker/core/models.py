@@ -149,6 +149,35 @@ def superpose(t, dose_events, f, v, ka, ke):
     return _restore(total, scalar)
 
 
+def bateman_er_single(t, dose, f, v, ka, ke, frac_ir=0.5, lag_h=4.0, ka2=None):
+    """Extended-release single dose: two superposed Bateman pulses.
+
+    Real ER stimulant formulations (e.g. Concerta, Adderall XR) deliver the
+    dose in two waves: a fraction ``frac_ir`` is absorbed immediately, and the
+    remaining ``1 - frac_ir`` is released after a delay ``lag_h`` (an enteric
+    coating dissolving lower in the gut), optionally with its own absorption
+    rate ``ka2``. The result is a flatter, longer plateau than a single pulse.
+
+        C(t) = C_single(t; frac_ir·D, ka) + C_single(t − lag_h; (1−frac_ir)·D, ka2)
+    """
+    ka2 = ka if ka2 is None else ka2
+    t_arr, scalar = _as_array(t)
+    c1 = np.atleast_1d(bateman_single(t_arr, frac_ir * dose, f, v, ka, ke))
+    c2 = np.atleast_1d(bateman_single(t_arr - lag_h, (1.0 - frac_ir) * dose, f, v, ka2, ke))
+    return _restore(c1 + c2, scalar)
+
+
+def superpose_er(t, dose_events, f, v, ka, ke, frac_ir=0.5, lag_h=4.0, ka2=None):
+    """Superposition of many extended-release doses (see ``bateman_er_single``)."""
+    t_arr, scalar = _as_array(t)
+    total = np.zeros_like(t_arr)
+    for t_i, amount in dose_events:
+        total += np.atleast_1d(
+            bateman_er_single(t_arr - t_i, amount, f, v, ka, ke, frac_ir, lag_h, ka2)
+        )
+    return _restore(total, scalar)
+
+
 def time_to_decay_to(c_current: float, c_target: float, ke: float) -> float:
     """Hours for a concentration to decay from ``c_current`` to ``c_target``.
 
@@ -214,17 +243,21 @@ def grams_ethanol(volume_ml: float, abv_percent: float) -> float:
     return volume_ml * (abv_percent / 100.0) * ETHANOL_DENSITY_G_PER_ML
 
 
-def widmark_bac(t, drink_events, r: float, mass_kg: float, beta: float = 0.015):
+def widmark_bac(t, drink_events, r: float, mass_kg: float, beta: float = 0.015, ramp_h: float = 0.0):
     """Blood alcohol concentration (g/dL) under the Widmark model.
 
     Elimination is zero-order: BAC falls along a straight line at ``beta`` g/dL
-    per hour, floored at zero. Each drink is modelled as instantaneous
+    per hour, floored at zero. By default each drink is modelled as instantaneous
     absorption (a step up in BAC). Because elimination saturates, drinks do not
     superpose the way linear doses do, so this walks the piecewise-linear
     trajectory forward through the drink timeline.
 
     Single-drink height: A / (r * M * 10), where the factor of 10 converts the
     classic g/kg (~g/L) Widmark result into g/dL.
+
+    Optional refinement: ``ramp_h`` > 0 spreads each drink's absorption linearly
+    over that many hours (e.g. 0.33 h ≈ 20 min on a full stomach) by splitting it
+    into a handful of sub-bumps, which rounds off the sharp instantaneous peak.
 
     Parameters
     ----------
@@ -233,6 +266,7 @@ def widmark_bac(t, drink_events, r: float, mass_kg: float, beta: float = 0.015):
     r            : Widmark distribution ratio (~0.68 male, ~0.55 female).
     mass_kg      : body mass in kg.
     beta         : elimination rate in g/dL/h (default 0.015).
+    ramp_h       : linear absorption window in hours (default 0 = instantaneous).
     """
     if r <= 0 or mass_kg <= 0:
         raise ValueError("r and mass_kg must be positive")
@@ -243,6 +277,15 @@ def widmark_bac(t, drink_events, r: float, mass_kg: float, beta: float = 0.015):
     events = sorted(drink_events, key=lambda d: d[0])
     if not events:
         return _restore(np.zeros_like(t_arr), scalar)
+
+    if ramp_h and ramp_h > 0:
+        # Split each drink into sub-bumps spread evenly across the ramp window.
+        n_sub = 10
+        events = sorted(
+            (ti + ramp_h * k / n_sub, grams / n_sub)
+            for ti, grams in events
+            for k in range(n_sub)
+        )
 
     event_t = np.array([e[0] for e in events], dtype=float)
     bumps = np.array([e[1] for e in events], dtype=float) / (r * mass_kg * 10.0)

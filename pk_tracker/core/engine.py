@@ -22,7 +22,7 @@ from datetime import datetime, timezone
 import numpy as np
 
 from . import models
-from .substances import MODEL_WIDMARK, Substance
+from .substances import MODEL_ONE_COMPARTMENT_ER, MODEL_WIDMARK, Substance
 
 # Default blood-alcohol driving limit used by the sobriety predictor (g/dL).
 # Clearly an estimate, not a legal guarantee; user-configurable.
@@ -64,6 +64,7 @@ class UserProfile:
     r_female: float = 0.55
     beta: float = 0.015                     # alcohol elimination, g/dL/h
     legal_bac_limit: float = DEFAULT_LEGAL_BAC_LIMIT
+    alcohol_ramp_min: float = 0.0           # alcohol absorption ramp (min); 0 = instant
     tolerance: dict[str, float] = field(default_factory=dict)   # per substance id
 
     def widmark_r(self) -> float:
@@ -113,16 +114,23 @@ class SubstanceTimeline:
         if not events:
             return 0.0 if np.isscalar(t) else np.zeros_like(np.asarray(t, float))
 
-        if self.substance.model == MODEL_WIDMARK:
+        sub = self.substance
+        if sub.model == MODEL_WIDMARK:
             return models.widmark_bac(
                 t, events, r=self.profile.widmark_r(),
                 mass_kg=self.profile.body_mass_kg, beta=self.profile.beta,
+                ramp_h=self.profile.alcohol_ramp_min / 60.0,
             )
-        v = self.substance.volume_liters(self.profile.body_mass_kg)
-        return models.superpose(
-            t, events, f=self.substance.f, v=v,
-            ka=self.substance.ka, ke=self.substance.ke_value(),
-        )
+        v = sub.volume_liters(self.profile.body_mass_kg)
+        ke = sub.ke_value()
+        if sub.model == MODEL_ONE_COMPARTMENT_ER:
+            return models.superpose_er(
+                t, events, f=sub.f, v=v, ka=sub.ka, ke=ke,
+                frac_ir=sub.frac_ir if sub.frac_ir is not None else 0.5,
+                lag_h=sub.lag_h if sub.lag_h is not None else 4.0,
+                ka2=sub.ka2,
+            )
+        return models.superpose(t, events, f=sub.f, v=v, ka=sub.ka, ke=ke)
 
     def effect_at(self, when: datetime | float):
         """Raw perceived effect (0..emax) at an instant. None if no PD model."""

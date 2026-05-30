@@ -100,6 +100,15 @@ def test_custom_substance_persists(db):
     assert again.presets[0].label == "Gourd"
 
 
+def test_er_substance_fields_round_trip(db):
+    er = db.get_substance("methylphenidate_er")
+    assert er is not None
+    assert er.model == "one_compartment_er"
+    assert er.frac_ir == pytest.approx(0.4)
+    assert er.lag_h == pytest.approx(5.0)
+    assert er.ka2 == pytest.approx(0.5)
+
+
 def test_deleting_substance_cascades_to_doses(db):
     db.add_dose("methylphenidate", 10, "mg", NOW)
     assert len(db.list_doses("methylphenidate")) == 1

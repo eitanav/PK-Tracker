@@ -84,6 +84,14 @@ class CalibrationDialog(QDialog):
         self.limit.setSuffix(" g/dL")
         self.limit.setValue(profile.legal_bac_limit)
         body.addRow("Driving limit (estimate)", self.limit)
+
+        self.ramp = QDoubleSpinBox()
+        self.ramp.setRange(0, 90)
+        self.ramp.setSingleStep(5)
+        self.ramp.setSuffix(" min")
+        self.ramp.setValue(profile.alcohol_ramp_min)
+        self.ramp.setToolTip("Linear alcohol absorption window. 0 = instantaneous (default).")
+        body.addRow("Alcohol absorption ramp", self.ramp)
         root.addLayout(body)
 
         # Per-substance tolerance.
@@ -146,6 +154,7 @@ class CalibrationDialog(QDialog):
             sex=self.sex.currentText(),
             beta=self.beta.value(),
             legal_bac_limit=self.limit.value(),
+            alcohol_ramp_min=self.ramp.value(),
         )
         profile.tolerance = {sid: spin.value() for sid, spin in self.tol_spins.items()}
         self.controller.save_profile(profile)

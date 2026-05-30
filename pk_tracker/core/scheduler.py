@@ -226,6 +226,26 @@ def alcohol_predictions(timeline: SubstanceTimeline, now: datetime) -> AlcoholPr
 # --------------------------------------------------------------------------- #
 # Numeric helpers
 # --------------------------------------------------------------------------- #
+def time_below_level(timeline, now: datetime, level: float,
+                     horizon_h: float = 48.0, step_h: float = 0.2) -> datetime | None:
+    """First time at/after ``now`` when concentration is at or below ``level``.
+
+    A forward scan against the actual curve, so it is correct even when the
+    concentration is still rising (e.g. an extended-release second pulse) rather
+    than assuming a simple exponential decay from the current value.
+    """
+    if float(timeline.concentration_at(now)) <= level:
+        return now
+    now_h = to_hours(now)
+    t = now_h + step_h
+    end = now_h + horizon_h
+    while t <= end:
+        if float(timeline.concentration_at(t)) <= level:
+            return _hours_to_dt(t)
+        t += step_h
+    return None
+
+
 def _hours_to_dt(t_hours: float) -> datetime:
     return datetime.fromtimestamp(t_hours * 3600.0, tz=timezone.utc)
 

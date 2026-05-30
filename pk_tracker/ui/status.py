@@ -8,10 +8,26 @@ peak / sleep-safe time — never a redose nudge).
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from ..core import models
+import numpy as np
+
+from ..core import scheduler
 from .theme import COLORS
+
+
+def _forward_peak(tl, now: datetime, hours: float = 16.0) -> datetime | None:
+    """Time of the next concentration maximum ahead of ``now``, if it is still
+    climbing to one (handles the extended-release second pulse). None if the
+    curve is already past its peak and only declining."""
+    res = tl.curve(now, now + timedelta(hours=hours), 160)
+    conc = res.concentration
+    if conc.size == 0:
+        return None
+    imax = int(np.argmax(conc))
+    if imax > 1 and conc[imax] > float(conc[0]) * 1.02:
+        return datetime.fromtimestamp(res.x[imax], tz=timezone.utc)
+    return None
 
 
 def fmt_clock(dt: datetime | None) -> str:
@@ -51,11 +67,11 @@ def current_readout(controller, sid: str, now: datetime) -> dict:
     last = tl.last_dose()
     if last is not None:
         out["since_last"] = fmt_delta((now - last.taken_at).total_seconds())
-        # Projected peak only makes sense for the absorbing one-compartment model.
+        # Projected peak only makes sense for the absorbing one-compartment
+        # models; scan the curve so it is right for IR and ER (bimodal) alike.
         if sub.ka is not None:
-            peak_at = last.taken_at.timestamp() + models.tmax_single(sub.ka, sub.ke_value()) * 3600
-            peak_dt = datetime.fromtimestamp(peak_at, tz=timezone.utc)
-            if peak_dt > now:
+            peak_dt = _forward_peak(tl, now)
+            if peak_dt is not None:
                 out["peak_at"] = fmt_clock(peak_dt)
     return out
 
@@ -85,17 +101,13 @@ def next_action(controller, sid: str, now: datetime):
             return ("Under limit ~", fmt_clock(pred.time_to_limit), COLORS["warn"])
         return ("Sober ~", fmt_clock(pred.time_to_zero), COLORS["accent"])
 
-    # Prescription stimulants: peak, then sleep-safe. No dosing prompt.
-    last = tl.last_dose()
-    peak_at = last.taken_at.timestamp() + models.tmax_single(sub.ka, sub.ke_value()) * 3600
-    peak_dt = datetime.fromtimestamp(peak_at, tz=timezone.utc)
-    if peak_dt > now:
+    # Prescription stimulants: peak, then sleep-safe. No dosing prompt. Both are
+    # read off the actual curve so the extended-release second pulse is handled.
+    peak_dt = _forward_peak(tl, now)
+    if peak_dt is not None:
         return ("Peak ~", fmt_clock(peak_dt), COLORS["accent"])
-    if sub.sleep_threshold is not None:
-        conc = float(tl.concentration_at(now))
-        if conc > sub.sleep_threshold:
-            hrs = models.time_to_decay_to(conc, sub.sleep_threshold, sub.ke_value())
-            from datetime import timedelta
-
-            return ("Sleep-safe ~", fmt_clock(now + timedelta(hours=hrs)), COLORS["accent"])
+    if sub.sleep_threshold is not None and float(tl.concentration_at(now)) > sub.sleep_threshold:
+        dt = scheduler.time_below_level(tl, now, sub.sleep_threshold)
+        if dt is not None:
+            return ("Sleep-safe ~", fmt_clock(dt), COLORS["accent"])
     return ("Clearing", "—", COLORS["subtext"])

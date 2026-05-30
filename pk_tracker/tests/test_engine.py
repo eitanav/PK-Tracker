@@ -101,6 +101,36 @@ def test_personal_peak_and_percent_of_peak():
     assert 0 < pct < 100
 
 
+def test_er_substance_uses_bimodal_model():
+    er = LIB["methylphenidate_er"]
+    doses = [Dose("methylphenidate_er", 36.0, "mg", NOW)]
+    tl = SubstanceTimeline(er, doses, _profile())
+    v = er.volume_liters(70.0)
+    expected = models.superpose_er(
+        to_hours(NOW), [(to_hours(NOW), 36.0)], er.f, v, er.ka, er.ke,
+        er.frac_ir, er.lag_h, er.ka2,
+    )
+    assert tl.concentration_at(NOW) == pytest.approx(expected)
+
+
+def test_er_outlasts_immediate_release_of_same_dose():
+    er = LIB["methylphenidate_er"]
+    ir = LIB["methylphenidate"]
+    taken = NOW - timedelta(hours=8)
+    er_tl = SubstanceTimeline(er, [Dose("methylphenidate_er", 36.0, "mg", taken)], _profile())
+    ir_tl = SubstanceTimeline(ir, [Dose("methylphenidate", 36.0, "mg", taken)], _profile())
+    # 8 hours on, the extended-release curve sits higher than the immediate one.
+    assert er_tl.concentration_at(NOW) > ir_tl.concentration_at(NOW)
+
+
+def test_alcohol_ramp_lowers_initial_bac():
+    alcohol = LIB["alcohol"]
+    doses = [Dose("alcohol", 28.0, "g", NOW)]
+    instant = SubstanceTimeline(alcohol, doses, _profile(alcohol_ramp_min=0))
+    ramped = SubstanceTimeline(alcohol, doses, _profile(alcohol_ramp_min=30))
+    assert ramped.concentration_at(NOW) < instant.concentration_at(NOW)
+
+
 def test_alcohol_uses_widmark_and_sex_ratio():
     alcohol = LIB["alcohol"]
     grams = 28.0

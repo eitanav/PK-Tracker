@@ -27,6 +27,11 @@ Two surfaces:
 |---|---|---|
 | ![Widget](docs/screenshots/floating-widget.png) | ![Alcohol](docs/screenshots/dashboard-alcohol.png) | ![Overlay](docs/screenshots/dashboard-overlay.png) |
 
+The extended-release model shows its characteristic double-pulse plateau — an
+immediate fraction, a dip, then a delayed second pulse:
+
+![Extended release](docs/screenshots/dashboard-extended-release.png)
+
 ---
 
 ## Quick start
@@ -36,7 +41,7 @@ Two surfaces:
 pip install -r requirements.txt
 
 # 2. Run the app
-python -m pk_tracker.app
+python -m pk_tracker.app      # or:  python run.py
 
 # 3. Run the math/persistence tests
 pip install -r requirements-dev.txt
@@ -105,6 +110,19 @@ The lisdexamfetamine prodrug is a nice special case: its slow red-blood-cell
 conversion to d-amphetamine *is* the absorption step, so the same Bateman form
 applies with `ka` = the conversion rate.
 
+### 1b. Extended release: two superposed Bateman pulses
+
+Real ER formulations (Concerta, Adderall XR) deliver a dose in two waves. The
+model superposes an immediate pulse and a delayed one:
+
+```
+C(t) = C_single(t; frac_ir·D, ka)  +  C_single(t − lag; (1−frac_ir)·D, ka2)
+```
+
+`frac_ir` is the fraction released immediately; the rest is released after
+`lag` hours, optionally with its own absorption rate `ka2`. This produces the
+flatter, longer plateau (and the visible double hump) seen above.
+
 ### 2. Pharmacodynamics: a tolerance-shifted Emax response
 
 ```
@@ -162,6 +180,8 @@ in Settings.
 | Alcohol | — (zero-order) | — | — | 30–90 min | — | Widmark; Vmax ≈ const `beta` 0.010–0.025 g/dL/h; r 0.68/0.55 |
 | Lisdexamfetamine | 11 h (active) | 0.693 (RBC conversion) | 0.295 | 3–5 h | 11 ng/mL | prodrug; conversion half-life ~1 h; **visualise only** |
 | Mixed amphetamine salts | 11 h | 1.0 | 0.75 | ~3 h (IR) | 11 ng/mL | blended d/l-amphetamine single curve; **visualise only** |
+| Methylphenidate ER | 3.5 h | 1.3 + 0.5 (2nd pulse) | 0.30 | ~6–8 h | 11 ng/mL | bimodal: 40% immediate + 60% delayed 5 h; **visualise only** |
+| Amphetamine XR | 11 h | 1.0 (both pulses) | 0.75 | ~8–10 h | 11 ng/mL | double-pulse: 50% immediate + 50% delayed 4 h; **visualise only** |
 
 Caffeine sanity checks: brewed coffee ~80–100 mg, espresso ~60–80 mg/shot.
 Turkish/unfiltered coffee retains grounds, so absorption is a little more
@@ -176,7 +196,8 @@ sustained (model with a marginally lower `ka` if desired).
 | Caffeine | yes | yes | **yes** | **yes** | full feature set |
 | Methylphenidate | yes (viz) | yes (viz) | no | no | prescription: visualise only, no dosing prompts |
 | Alcohol | yes (BAC) | optional | no | n/a | sobriety/clearance predictor only; never prompts more intake |
-| Lisdex / mixed salts | yes (viz) | yes (viz) | no | no | prescription stimulants: visualise only |
+| Lisdex / amphetamines | yes (viz) | yes (viz) | no | no | prescription stimulants: visualise only |
+| Methylphenidate ER / Amphetamine XR | yes (viz, bimodal) | yes (viz) | no | no | extended-release: visualise only |
 | Custom | per model | optional | opt-in (stimulant-like only) | opt-in | added from the UI, persisted to `substances.json` |
 
 The redose nudge and the sleep-cutoff dosing directive are **caffeine-first**.
@@ -204,7 +225,7 @@ prompt of any kind.
 ```
 pk_tracker/
   core/            # pure PK/PD math — no UI imports, fully unit-tested
-    models.py        # Bateman, superposition, Emax, Widmark
+    models.py        # Bateman, superposition, ER bimodal, Emax, Widmark
     substances.py    # Substance/Preset definitions + JSON library loader
     engine.py        # dose log + models -> concentration/effect over time
     scheduler.py     # redose nudge, sleep-cutoff solver, alcohol clearance
@@ -239,10 +260,25 @@ python -m pytest pk_tracker/tests/ -q
 
 ---
 
+## Packaging
+
+A PyInstaller spec builds a single-file executable:
+
+```bash
+pip install pyinstaller
+pyinstaller pk_tracker.spec      # -> dist/PKTracker  (Windows: dist\PKTracker.exe)
+```
+
+The spec bundles the data files (`schema.sql`, `substances.json`) at their
+package-relative paths and trims unused Qt modules. Build on the target OS to
+get a native binary (build on Windows for the `.exe`).
+
 ## Roadmap / non-goals
 
-Planned (optional): PyInstaller single-file packaging; a bimodal methylphenidate
-ER model (two Bateman components); a short alcohol absorption ramp.
+Implemented refinements: a bimodal extended-release model (two Bateman pulses —
+Methylphenidate ER, Amphetamine XR) and an optional alcohol absorption ramp (set
+the window in Calibration; 0 = instantaneous). Still open: ER ascending-dose
+profiles beyond two pulses.
 
 Explicit non-goals: no webcam/screen capture or continuous sensing; no
 background compute loop; no cloud sync, accounts, or network calls; no redose or

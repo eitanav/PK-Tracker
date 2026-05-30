@@ -124,6 +124,64 @@
         {"label": "20 mg", "amount": 20.0, "unit": "mg"},
         {"label": "30 mg", "amount": 30.0, "unit": "mg"}
       ]
+    },
+    {
+      "id": "methylphenidate_er",
+      "name": "Methylphenidate ER",
+      "model": "one_compartment_er",
+      "half_life_h": 3.5,
+      "ka": 1.3,
+      "ke": 0.198,
+      "f": 0.30,
+      "v_l_per_kg": 2.5,
+      "frac_ir": 0.4,
+      "lag_h": 5.0,
+      "ka2": 0.5,
+      "ec50": 0.011,
+      "emax": 1.0,
+      "redose_eligible": false,
+      "is_builtin": true,
+      "unit": "mg",
+      "conc_unit": "ng/mL",
+      "conc_scale": 1000.0,
+      "color": "#5fa8ff",
+      "note": "Prescription extended-release stimulant: visualised only. Modelled as an immediate pulse plus a delayed second pulse (the ascending ER profile). Dosing is your prescriber's decision; this tool never recommends doses.",
+      "sleep_threshold": 0.004,
+      "toxicity_threshold": 0.04,
+      "presets": [
+        {"label": "18 mg", "amount": 18.0, "unit": "mg"},
+        {"label": "36 mg", "amount": 36.0, "unit": "mg"},
+        {"label": "54 mg", "amount": 54.0, "unit": "mg"}
+      ]
+    },
+    {
+      "id": "amphetamine_xr",
+      "name": "Amphetamine XR",
+      "model": "one_compartment_er",
+      "half_life_h": 11.0,
+      "ka": 1.0,
+      "ke": 0.063,
+      "f": 0.75,
+      "v_l_per_kg": 4.0,
+      "frac_ir": 0.5,
+      "lag_h": 4.0,
+      "ka2": 1.0,
+      "ec50": 0.011,
+      "emax": 1.0,
+      "redose_eligible": false,
+      "is_builtin": true,
+      "unit": "mg",
+      "conc_unit": "ng/mL",
+      "conc_scale": 1000.0,
+      "color": "#b08bff",
+      "note": "Prescription extended-release stimulant: visualised only. Double-pulsed delivery (half immediate, half enterically delayed) per the XR profile. Dosing is your prescriber's decision; this tool never recommends doses.",
+      "sleep_threshold": 0.015,
+      "toxicity_threshold": 0.12,
+      "presets": [
+        {"label": "10 mg", "amount": 10.0, "unit": "mg"},
+        {"label": "20 mg", "amount": 20.0, "unit": "mg"},
+        {"label": "30 mg", "amount": 30.0, "unit": "mg"}
+      ]
     }
   ]
 }

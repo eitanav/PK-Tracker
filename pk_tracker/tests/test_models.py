@@ -134,6 +134,48 @@ def test_superposition_is_additive_in_dose():
 
 
 # --------------------------------------------------------------------------- #
+# Extended-release: two superposed Bateman pulses
+# --------------------------------------------------------------------------- #
+def test_er_is_sum_of_two_pulses():
+    f, v, ka, ke = 0.30, 175.0, 1.3, 0.198
+    frac, lag, ka2 = 0.4, 5.0, 0.6
+    t = np.linspace(0, 24, 4000)
+    er = models.bateman_er_single(t, 36.0, f, v, ka, ke, frac, lag, ka2)
+    manual = (
+        models.bateman_single(t, frac * 36.0, f, v, ka, ke)
+        + models.bateman_single(t - lag, (1 - frac) * 36.0, f, v, ka2, ke)
+    )
+    assert np.allclose(er, manual)
+
+
+def test_er_second_pulse_inactive_before_its_lag():
+    f, v, ka, ke = 0.30, 175.0, 1.3, 0.198
+    frac, lag = 0.4, 5.0
+    # Before the lag, only the immediate fraction contributes.
+    early = models.bateman_er_single(2.0, 36.0, f, v, ka, ke, frac, lag)
+    only_ir = models.bateman_single(2.0, frac * 36.0, f, v, ka, ke)
+    assert early == pytest.approx(only_ir)
+
+
+def test_er_plateau_outlasts_an_equivalent_immediate_dose():
+    # Same total dose: ER holds a higher level late in the day than pure IR,
+    # because part of it is released later.
+    f, v, ka, ke = 0.30, 175.0, 1.3, 0.198
+    late = 9.0
+    er = models.bateman_er_single(late, 36.0, f, v, ka, ke, frac_ir=0.4, lag_h=5.0)
+    ir = models.bateman_single(late, 36.0, f, v, ka, ke)
+    assert er > ir
+
+
+def test_superpose_er_matches_single_when_one_dose():
+    f, v, ka, ke = 0.30, 175.0, 1.3, 0.198
+    t = np.linspace(0, 24, 1000)
+    multi = models.superpose_er(t, [(0.0, 36.0)], f, v, ka, ke, 0.4, 5.0)
+    single = models.bateman_er_single(t, 36.0, f, v, ka, ke, 0.4, 5.0)
+    assert np.allclose(multi, single)
+
+
+# --------------------------------------------------------------------------- #
 # Decay to a target level (sleep-cutoff primitive)
 # --------------------------------------------------------------------------- #
 def test_time_to_decay_to_matches_exponential():
@@ -228,6 +270,30 @@ def test_widmark_two_drinks_do_not_naively_superpose():
     expected = max(0.0, single_bump - beta * 2.0) + single_bump
     assert bac_at_second == pytest.approx(expected)
     assert bac_at_second < 2 * single_bump  # strictly less than naive doubling
+
+
+def test_widmark_ramp_softens_the_peak_but_conserves_clearance():
+    r, mass, beta = 0.68, 70.0, 0.015
+    drinks = [(0.0, 28.0)]
+    instant_peak = models.widmark_bac(0.0, drinks, r, mass, beta)            # ramp 0
+    ramped_at_zero = models.widmark_bac(0.0, drinks, r, mass, beta, ramp_h=0.5)
+    ramped_after = models.widmark_bac(0.5, drinks, r, mass, beta, ramp_h=0.5)
+
+    # At t=0 only a sliver has been absorbed, so the ramped curve starts lower.
+    assert ramped_at_zero < instant_peak
+    # By the end of the ramp almost all of it is on board (minus a little
+    # elimination), approaching the instantaneous peak.
+    assert ramped_after == pytest.approx(instant_peak - beta * 0.5, rel=0.05)
+
+
+def test_widmark_ramp_zero_equals_default():
+    r, mass, beta = 0.68, 70.0, 0.015
+    drinks = [(0.0, 20.0), (1.5, 14.0)]
+    t = np.linspace(0, 8, 200)
+    assert np.allclose(
+        models.widmark_bac(t, drinks, r, mass, beta),
+        models.widmark_bac(t, drinks, r, mass, beta, ramp_h=0.0),
+    )
 
 
 def test_widmark_time_to_target():

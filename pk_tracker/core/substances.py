@@ -19,6 +19,7 @@ from pathlib import Path
 
 # Model identifiers stored in the DB / JSON.
 MODEL_ONE_COMPARTMENT = "one_compartment"
+MODEL_ONE_COMPARTMENT_ER = "one_compartment_er"   # bimodal extended release
 MODEL_WIDMARK = "widmark_zero_order"
 
 # Where the bundled library lives.
@@ -61,6 +62,10 @@ class Substance:
     ke: float | None = None
     f: float | None = None
     v_l_per_kg: float | None = None
+    # --- extended-release (bimodal) parameters, only for MODEL_ONE_COMPARTMENT_ER ---
+    frac_ir: float | None = None    # fraction released immediately (rest is delayed)
+    lag_h: float | None = None      # delay before the second pulse (h)
+    ka2: float | None = None        # absorption rate of the second pulse (defaults to ka)
     # --- pharmacodynamics ---
     ec50: float | None = None       # half-maximal effect concentration (mg/L)
     emax: float = 1.0

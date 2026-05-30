@@ -29,10 +29,13 @@ SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
 # Columns of the substances table, in order, used for round-tripping.
 _SUBSTANCE_COLUMNS = [
     "id", "name", "model", "half_life_h", "ka", "ke", "f", "v_l_per_kg",
-    "ec50", "emax", "redose_eligible", "is_builtin", "unit", "conc_unit",
-    "conc_scale", "color", "note", "sleep_threshold", "redose_fraction",
-    "overload_amount_mg", "toxicity_threshold",
+    "frac_ir", "lag_h", "ka2", "ec50", "emax", "redose_eligible", "is_builtin",
+    "unit", "conc_unit", "conc_scale", "color", "note", "sleep_threshold",
+    "redose_fraction", "overload_amount_mg", "toxicity_threshold",
 ]
+
+# Columns added after the first release; auto-added to pre-existing databases.
+_MIGRATION_COLUMNS = {"frac_ir": "REAL", "lag_h": "REAL", "ka2": "REAL"}
 
 # Profile keys that are plain scalars (everything else is a tolerance_<id> key).
 _PROFILE_SCALARS = {
@@ -42,6 +45,7 @@ _PROFILE_SCALARS = {
     "r_female": float,
     "beta": float,
     "legal_bac_limit": float,
+    "alcohol_ramp_min": float,
 }
 _TOLERANCE_PREFIX = "tolerance_"
 
@@ -75,12 +79,21 @@ class Database:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.init_schema()
+        self._migrate()
         if seed:
             self.seed_builtins()
 
     # ----- schema / seeding --------------------------------------------------
     def init_schema(self) -> None:
         self.conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+        self.conn.commit()
+
+    def _migrate(self) -> None:
+        """Add columns introduced after a DB was first created (idempotent)."""
+        existing = {row[1] for row in self.conn.execute("PRAGMA table_info(substances)")}
+        for col, col_type in _MIGRATION_COLUMNS.items():
+            if col not in existing:
+                self.conn.execute(f"ALTER TABLE substances ADD COLUMN {col} {col_type}")
         self.conn.commit()
 
     def seed_builtins(self, library_path: str | Path = DEFAULT_LIBRARY_PATH) -> None:
@@ -98,7 +111,9 @@ class Database:
         values = {
             "id": sub.id, "name": sub.name, "model": sub.model,
             "half_life_h": sub.half_life_h, "ka": sub.ka, "ke": sub.ke,
-            "f": sub.f, "v_l_per_kg": sub.v_l_per_kg, "ec50": sub.ec50,
+            "f": sub.f, "v_l_per_kg": sub.v_l_per_kg,
+            "frac_ir": sub.frac_ir, "lag_h": sub.lag_h, "ka2": sub.ka2,
+            "ec50": sub.ec50,
             "emax": sub.emax, "redose_eligible": int(sub.redose_eligible),
             "is_builtin": int(sub.is_builtin), "unit": sub.unit,
             "conc_unit": sub.conc_unit, "conc_scale": sub.conc_scale,
@@ -158,7 +173,9 @@ class Database:
         return Substance(
             id=row["id"], name=row["name"], model=row["model"],
             half_life_h=row["half_life_h"], ka=row["ka"], ke=row["ke"],
-            f=row["f"], v_l_per_kg=row["v_l_per_kg"], ec50=row["ec50"],
+            f=row["f"], v_l_per_kg=row["v_l_per_kg"],
+            frac_ir=row["frac_ir"], lag_h=row["lag_h"], ka2=row["ka2"],
+            ec50=row["ec50"],
             emax=row["emax"], redose_eligible=bool(row["redose_eligible"]),
             is_builtin=bool(row["is_builtin"]), unit=row["unit"],
             conc_unit=row["conc_unit"], conc_scale=row["conc_scale"],
