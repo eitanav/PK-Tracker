@@ -10,7 +10,7 @@ population-average model; individual metabolism varies widely.
 
 ![Caffeine dashboard](docs/screenshots/dashboard-caffeine.png)
 
-> 📖 **מדריך שימוש בעברית:** [docs/מדריך-שימוש.md](docs/מדריך-שימוש.md)
+> 🌐 **Languages:** English · [עברית — מדריך שימוש מלא](README.he.md)
 
 ---
 
@@ -56,6 +56,34 @@ database lives at `~/.pk_tracker/pk_tracker.sqlite`.
 
 > PySide6 (LGPL) is used deliberately rather than PyQt6 (GPL/commercial), to keep
 > the project free to distribute and relicense.
+
+---
+
+## Usage
+
+1. **Pick a substance** in the left list (Caffeine, Alcohol, a prescription
+   stimulant, or your own).
+2. **Log a dose** — tap a preset, or type an amount and optionally how many
+   minutes ago, then **Log**. Edit or delete past doses from **History**.
+3. **Read the plot** — the filled coloured line is the **blood level** (left
+   axis); the dashed blue line is the **effect** as a percent of your recent
+   peak (right axis). Solid = past, dashed = projection, with a **now** marker.
+   Use **Window** to change the span and **Overlay all** to compare substances.
+4. **Status panel** (right) — current effect/level, time since last dose,
+   projected peak, and (caffeine) amount in body vs the jitter threshold.
+5. **Caffeine** also gets a **redose nudge** (effect below ~30%) and a **sleep
+   cutoff** (set a bedtime to see the latest safe coffee time).
+6. **Alcohol** shows BAC and estimated times to drop below the driving limit and
+   to reach 0.00 — estimates only, never a basis for deciding to drive.
+7. **Floating widget & tray** — toggle the always-on-top widget; closing the
+   main window keeps the app running in the system tray.
+8. **Calibration** sets body mass, sex, and per-substance tolerance;
+   **New substance…** adds your own.
+
+Prescription medicines (methylphenidate, amphetamines) are **visualise-only** —
+no dosing prompts of any kind.
+
+> 🇮🇱 הסבר מלא ופשוט בעברית: **[README.he.md](README.he.md)**
 
 ---
 
