@@ -138,8 +138,10 @@ class Database:
         return self._row_to_substance(row) if row else None
 
     def load_substances(self) -> dict[str, Substance]:
+        # Built-ins first, each group in insertion (JSON / creation) order so the
+        # library reads caffeine, methylphenidate, alcohol, ... and custom ones last.
         rows = self.conn.execute(
-            "SELECT * FROM substances ORDER BY is_builtin DESC, name"
+            "SELECT * FROM substances ORDER BY is_builtin DESC, rowid"
         ).fetchall()
         return {row["id"]: self._row_to_substance(row) for row in rows}
 
@@ -267,6 +269,17 @@ class Database:
             self.set_profile_value(key, getattr(profile, key))
         for sub_id, factor in profile.tolerance.items():
             self.set_profile_value(f"{_TOLERANCE_PREFIX}{sub_id}", factor)
+
+    # ----- generic settings (UI prefs: widget position, bedtime, ...) --------
+    # These live in the same key/value table; get_profile ignores unknown keys.
+    def get_setting(self, key: str, default: str | None = None) -> str | None:
+        row = self.conn.execute(
+            "SELECT value FROM user_profile WHERE key = ?", (key,)
+        ).fetchone()
+        return row["value"] if row else default
+
+    def set_setting(self, key: str, value) -> None:
+        self.set_profile_value(key, value)
 
     # ----- lifecycle ---------------------------------------------------------
     def close(self) -> None:

@@ -21,6 +21,8 @@ def db(tmp_path):
 def test_seeds_builtin_substances(db):
     subs = db.load_substances()
     assert "caffeine" in subs and "alcohol" in subs and "methylphenidate" in subs
+    # Caffeine leads (it is the full-feature default the UI selects first).
+    assert list(subs.keys())[0] == "caffeine"
     caf = subs["caffeine"]
     assert caf.is_builtin and caf.redose_eligible
     assert caf.ka == pytest.approx(5.0)
