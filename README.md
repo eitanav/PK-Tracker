@@ -10,6 +10,8 @@ population-average model; individual metabolism varies widely.
 
 ![Caffeine dashboard](docs/screenshots/dashboard-caffeine.png)
 
+> 📖 **מדריך שימוש בעברית:** [docs/מדריך-שימוש.md](docs/מדריך-שימוש.md)
+
 ---
 
 ## What it does
