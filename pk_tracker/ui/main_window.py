@@ -16,6 +16,7 @@ from datetime import timedelta, timezone
 from PySide6.QtCore import Qt, QTime, QTimer
 from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtWidgets import (
+    QApplication,
     QCheckBox,
     QComboBox,
     QDateTimeEdit,
@@ -42,8 +43,8 @@ from PySide6.QtWidgets import (
 from ..controller import now_utc
 from . import status
 from .plots import TimelinePlot
-from .settings import CalibrationDialog, CustomSubstanceDialog
-from .theme import COLORS, mono_font
+from .settings import CalibrationDialog, CustomSubstanceDialog, SettingsDialog
+from .theme import COLORS, apply_theme, mono_font
 from .tray import AppTray, make_app_icon
 from .widget import FloatingWidget
 
@@ -85,6 +86,7 @@ class MainWindow(QMainWindow):
         subs = controller.ordered_substances()
         self.active_sid = subs[0].id if subs else None
         self._redose_notified: dict[str, bool] = {}
+        self._sleep_notified: dict[str, bool] = {}
         self._quitting = False
 
         central = QWidget()
@@ -101,7 +103,7 @@ class MainWindow(QMainWindow):
         self.tray = AppTray(
             self.icon, on_show=self.show_dashboard,
             on_toggle_widget=self.toggle_widget, on_toggle_pin=self.toggle_widget_pin,
-            on_quit=self.quit_app, parent=self,
+            on_settings=self._open_settings, on_quit=self.quit_app, parent=self,
         )
         if QSystemTrayIcon.isSystemTrayAvailable():
             self.tray.show()
@@ -164,7 +166,18 @@ class MainWindow(QMainWindow):
         v.addLayout(custom)
         self.custom_hint = QLabel("")
         self.custom_hint.setObjectName("Muted")
+        self.custom_hint.setWordWrap(True)
         v.addWidget(self.custom_hint)
+
+        # Confirmation that a dose was actually logged (otherwise small changes —
+        # e.g. a single drink's low BAC — feel like "nothing happened").
+        self.log_feedback = QLabel("")
+        self.log_feedback.setObjectName("Ok")
+        self.log_feedback.setWordWrap(True)
+        v.addWidget(self.log_feedback)
+        self._feedback_timer = QTimer(self)
+        self._feedback_timer.setSingleShot(True)
+        self._feedback_timer.timeout.connect(lambda: self.log_feedback.setText(""))
 
         v.addWidget(self._h2("History"))
         self.history = QListWidget()
@@ -189,6 +202,22 @@ class MainWindow(QMainWindow):
 
         self.plot = TimelinePlot()
         v.addWidget(self.plot, 1)
+
+        # Legend so the two traces are never a mystery: which line is blood level,
+        # which is effect, and what solid vs dashed means. Updated per substance.
+        legend = QHBoxLayout()
+        legend.setSpacing(14)
+        self.legend_level = QLabel("Blood level")
+        self.legend_effect = QLabel("Effect")
+        self.legend_hint = QLabel("solid = so far   ·   dashed = projected")
+        self.legend_hint.setObjectName("Muted")
+        for w in (self.legend_level, self.legend_effect):
+            w.setStyleSheet("font-size: 11px; font-weight: 600;")
+        legend.addWidget(self.legend_level)
+        legend.addWidget(self.legend_effect)
+        legend.addStretch(1)
+        legend.addWidget(self.legend_hint)
+        v.addLayout(legend)
 
         controls = QHBoxLayout()
         self.overlay_chk = QCheckBox("Overlay all (effect %)")
@@ -263,6 +292,24 @@ class MainWindow(QMainWindow):
         srow.addWidget(self.bedtime)
         srow.addStretch(1)
         sv.addLayout(srow)
+
+        # How much caffeine you'll tolerate still in your blood at bedtime, as a
+        # percentage of one dose's peak. Lower = stricter cutoff + earlier nudge.
+        trow = QHBoxLayout()
+        trow.addWidget(QLabel("Target by bed"))
+        self.sleep_target = QSpinBox()
+        self.sleep_target.setRange(5, 90)
+        self.sleep_target.setSuffix(" % of peak")
+        self.sleep_target.setValue(int(self.controller.get_setting("ui_sleep_target_pct", "15")))
+        self.sleep_target.setToolTip(
+            "Caffeine left in your blood at bedtime, as % of one dose's peak. "
+            "Lower is stricter. You'll get a tray nudge ~30 min before the cutoff."
+        )
+        self.sleep_target.valueChanged.connect(self._on_sleep_target_changed)
+        trow.addWidget(self.sleep_target)
+        trow.addStretch(1)
+        sv.addLayout(trow)
+
         self.sleep_result = QLabel("—")
         self.sleep_result.setObjectName("Sub")
         self.sleep_result.setWordWrap(True)
@@ -283,9 +330,9 @@ class MainWindow(QMainWindow):
         v.addStretch(1)
 
         for label, slot in [
+            ("Settings…", self._open_settings),
             ("Calibration…", self._open_calibration),
             ("New substance…", self._open_custom),
-            ("Toggle widget", self.toggle_widget),
             ("About", self._about),
         ]:
             b = QPushButton(label)
@@ -323,8 +370,15 @@ class MainWindow(QMainWindow):
             b.clicked.connect(lambda _=False, p=preset: self._log_preset(p))
             self.preset_box.addWidget(b)
         self.custom_amount.setSuffix(f" {sub.unit}")
+        # Seed the custom field with a representative amount for this substance so
+        # it is never an absurd default (e.g. 90 g of ethanol = ~7 drinks).
+        if sub.presets:
+            self.custom_amount.setValue(sub.presets[0].amount)
         if sub.is_alcohol:
-            self.custom_hint.setText("Alcohol: amount is grams of ethanol (use presets for drinks).")
+            self.custom_hint.setText(
+                "Tip: tap a drink above to log it. The box below is grams of pure "
+                "ethanol (one standard drink ≈ 14 g)."
+            )
         else:
             self.custom_hint.setText("")
         # Show/hide contextual panels. The sleep-cutoff directive ("latest dose
@@ -338,13 +392,26 @@ class MainWindow(QMainWindow):
     def _log_preset(self, preset):
         self.controller.log_dose(self.active_sid, preset.amount, preset.unit)
         self.refresh_all()
+        self._flash_logged(preset.label)
 
     def _log_custom(self):
         sub = self.controller.substance(self.active_sid)
         taken = now_utc() - timedelta(minutes=self.mins_ago.value())
-        self.controller.log_dose(self.active_sid, self.custom_amount.value(), sub.unit, taken_at=taken)
+        amount = self.custom_amount.value()
+        self.controller.log_dose(self.active_sid, amount, sub.unit, taken_at=taken)
         self.mins_ago.setValue(0)
         self.refresh_all()
+        self._flash_logged(f"{amount:g} {sub.unit}")
+
+    def _flash_logged(self, label):
+        """Show a brief, self-clearing confirmation with the resulting level."""
+        r = status.current_readout(self.controller, self.active_sid, now_utc())
+        if r["effect_pct"] is not None:
+            detail = f"effect {r['effect_pct']:.0f}%"
+        else:
+            detail = f"{r['conc_value']:.3f} {r['conc_unit']}"
+        self.log_feedback.setText(f"✓ Logged {label}  ·  now {detail}")
+        self._feedback_timer.start(5000)
 
     def _selected_dose(self):
         item = self.history.currentItem()
@@ -425,6 +492,16 @@ class MainWindow(QMainWindow):
         self.plot.add_substance(res.x, conc_disp, effect_pct, sub.color, primary=True)
         self.plot.set_left_label(sub.conc_unit)
 
+        # Keep the legend in step with what is actually drawn.
+        level_name = "BAC" if sub.is_alcohol else "Blood level"
+        self.legend_level.setText(f"●  {level_name} ({sub.conc_unit})")
+        self.legend_level.setStyleSheet(f"font-size: 11px; font-weight: 600; color: {sub.color};")
+        self.legend_effect.setVisible(effect_pct is not None)
+        self.legend_effect.setText("●  Effect (% of recent peak)")
+        self.legend_effect.setStyleSheet(
+            f"font-size: 11px; font-weight: 600; color: {COLORS['accent']};"
+        )
+
         if sub.sleep_threshold is not None:
             self.plot.add_hline(sub.sleep_threshold * sub.conc_scale, COLORS["muted"], "sleep-safe")
         if sub.is_alcohol:
@@ -493,19 +570,49 @@ class MainWindow(QMainWindow):
 
         self._check_redose_alert(now)
 
+    _SLEEP_LEAD_MIN = 30   # how long before the cutoff to nudge "stop drinking"
+
     def _refresh_sleep_cutoff(self, now):
         bt = self.bedtime.time()
         bedtime = self._next_datetime_for(now, bt.hour(), bt.minute())
-        res = self.controller.sleep_cutoff(self.active_sid, bedtime)
+        pct = float(self.sleep_target.value())
+        res = self.controller.sleep_cutoff(self.active_sid, bedtime, target_fraction=pct / 100.0)
         sub = self.controller.substance(self.active_sid)
         if res.feasible and res.cutoff_at is not None:
             self.sleep_result.setText(
                 f"Latest {sub.name.lower()} dose: {status.fmt_clock(res.cutoff_at)} "
-                f"to keep ≤ {res.ceiling * sub.conc_scale:.2f} {sub.conc_unit} at "
-                f"{status.fmt_clock(bedtime)}."
+                f"to stay ≤ {pct:.0f}% (≈ {res.ceiling * sub.conc_scale:.2f} {sub.conc_unit}) "
+                f"at {status.fmt_clock(bedtime)}."
             )
         else:
             self.sleep_result.setText(f"No safe dose before bedtime — {res.reason}.")
+        self._check_sleep_alert(now, bedtime, res, sub, pct)
+
+    def _on_sleep_target_changed(self):
+        self.controller.set_setting("ui_sleep_target_pct", str(self.sleep_target.value()))
+        self._sleep_notified.clear()    # new threshold ⇒ allow a fresh nudge
+        self._refresh_status()
+
+    def _check_sleep_alert(self, now, bedtime, res, sub, pct):
+        """Nudge ~30 min before the latest-coffee time so you stop in advance."""
+        sid = self.active_sid
+        # Only nudge people who are actually drinking this substance.
+        if not res.feasible or res.cutoff_at is None or not self.controller.doses(sid):
+            self._sleep_notified[sid] = False
+            return
+        lead = timedelta(minutes=self._SLEEP_LEAD_MIN)
+        if res.cutoff_at - lead <= now <= res.cutoff_at:
+            if not self._sleep_notified.get(sid):
+                mins = max(0, int((res.cutoff_at - now).total_seconds() // 60))
+                self.tray.showMessage(
+                    "Coffee curfew",
+                    f"Last {sub.name.lower()} by {status.fmt_clock(res.cutoff_at)} "
+                    f"(~{mins} min) to stay ≤ {pct:.0f}% at {status.fmt_clock(bedtime)}.",
+                    self.icon, 8000,
+                )
+                self._sleep_notified[sid] = True
+        elif now < res.cutoff_at - lead:
+            self._sleep_notified[sid] = False   # reset for the next approach
 
     def _refresh_alcohol(self, now):
         pred = self.controller.alcohol_predictions(self.active_sid, now)
@@ -595,29 +702,40 @@ class MainWindow(QMainWindow):
         self.raise_()
         self.activateWindow()
 
-    def toggle_widget(self):
-        if self.widget.isVisible():
-            self.widget.hide()
-            self.controller.set_setting("ui_widget_visible", "0")
-        else:
+    def set_widget_visible(self, visible: bool):
+        if visible:
             self.widget.show()
             self.widget.refresh()
-            self.controller.set_setting("ui_widget_visible", "1")
+        else:
+            self.widget.hide()
+        self.controller.set_setting("ui_widget_visible", "1" if visible else "0")
+
+    def toggle_widget(self):
+        self.set_widget_visible(not self.widget.isVisible())
+
+    def set_widget_pinned(self, pinned: bool):
+        self.widget.set_pinned(pinned)
+        if not self.widget.isVisible():           # switching mode also reveals it
+            self.set_widget_visible(True)
 
     def toggle_widget_pin(self):
-        # Flip between float-on-top and pinned-to-desktop, making sure it's shown.
-        self.widget.set_pinned(not self.widget.pinned)
-        if not self.widget.isVisible():
-            self.widget.show()
-            self.controller.set_setting("ui_widget_visible", "1")
-        self.widget.refresh()
+        self.set_widget_pinned(not self.widget.pinned)
+
+    def set_theme(self, mode: str):
+        apply_theme(QApplication.instance(), mode)
+        self.controller.set_setting("ui_theme", mode)
+        # Refresh chrome that caches colours at construction time.
+        self.plot.apply_theme()
+        self.widget.spark.apply_theme()
+        self.refresh_all()
+
+    def _open_settings(self):
+        SettingsDialog(self.controller, self, self).exec()
 
     def quit_app(self):
         self._quitting = True
         self.widget.close()
         self.controller.db.close()
-        from PySide6.QtWidgets import QApplication
-
         QApplication.instance().quit()
 
     def closeEvent(self, e):

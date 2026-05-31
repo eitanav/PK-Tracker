@@ -41,11 +41,17 @@ right-click → **Extract All**, then double-click **`PKTracker.exe`**.
 Two surfaces:
 
 - **Main dashboard** — substance selector, dose logging, the live blood-level +
-  effect plot, history, status readout, sleep-cutoff solver, calibration, and a
-  custom-substance builder.
-- **Floating widget** — a small frameless, always-on-top panel showing the
-  current state of the active substance at a glance, with a `+ dose` button.
-  Closing the main window keeps the app alive in the system tray.
+  effect plot (with a legend: the coloured line is **blood level**, the blue line
+  is **effect %**, solid = so far, dashed = projected), history, status readout,
+  sleep-cutoff solver, calibration, and a custom-substance builder. Logging a
+  dose shows a confirmation with the resulting level.
+- **Floating widget** — a small frameless panel showing the current state of the
+  active substance at a glance, with a `+ dose` button. It opens automatically
+  and defaults to **pinned to desktop** (sits behind other windows like a
+  gadget); switch it to **float on top** from Settings or its right-click menu.
+- **Settings** (button or tray) — one place for the **theme** (dark / light),
+  the widget (show/hide, pinned vs float), and links to calibration and custom
+  substances. Closing the main window keeps the app alive in the system tray.
 
 | Floating widget | Alcohol clearance | Overlay (effect %) |
 |---|---|---|
@@ -94,16 +100,21 @@ database lives at `~/.pk_tracker/pk_tracker.sqlite`.
 4. **Status panel** (right) — current effect/level, time since last dose,
    projected peak, and (caffeine) amount in body vs the jitter threshold.
 5. **Caffeine** also gets a **redose nudge** (effect below ~30%) and a **sleep
-   cutoff** (set a bedtime to see the latest safe coffee time).
-6. **Alcohol** shows BAC and estimated times to drop below the driving limit and
-   to reach 0.00 — estimates only, never a basis for deciding to drive.
+   cutoff**: set a bedtime and a **target** (≤ X% of a dose's peak still in your
+   blood at bedtime) to see the latest safe coffee time — and get a tray nudge
+   ~30 min before it, so you know when to stop in advance.
+6. **Alcohol** — pick *Alcohol*, then **tap a drink** (Beer / Wine / Spirits /
+   Pint) to log it; the custom box takes grams of pure ethanol (≈14 g per
+   standard drink). It shows BAC and estimated times to drop below the driving
+   limit and to reach 0.00 — estimates only, never a basis for deciding to drive.
 7. **Floating widget & tray** — a small status widget opens automatically at
-   startup. Right-click it (or use the tray menu) to switch between **Float on
-   top** and **Pin to desktop** (sits behind other windows like a gadget), or
-   hide it. Closing the main window keeps the app running in the system tray.
-   Note: this is the app's own floating panel, not a Windows 11 Widgets-board
-   widget (a different Microsoft technology).
-8. **Calibration** sets body mass, sex, and per-substance tolerance;
+   startup, **pinned to the desktop** by default. Right-click it (or use Settings
+   / the tray menu) to switch to **Float on top**, or hide it. Closing the main
+   window keeps the app running in the system tray. Note: this is the app's own
+   floating panel, not a Windows 11 Widgets-board widget (a different Microsoft
+   technology).
+8. **Settings** — choose the **theme** (dark / light) and control the widget in
+   one place. **Calibration** sets body mass, sex, and per-substance tolerance;
    **New substance…** adds your own.
 
 Prescription medicines (methylphenidate, amphetamines) are **visualise-only** —

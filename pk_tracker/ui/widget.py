@@ -40,9 +40,12 @@ class FloatingWidget(QWidget):
 
         # "Pinned to desktop" sits the widget at the desktop level (behind other
         # windows) like a gadget; otherwise it floats on top of everything.
-        self.pinned = self.controller.get_setting(_PINNED_KEY, "0") == "1"
+        # Pinned is the default so it feels like part of the desktop, not a popup.
+        self.pinned = self.controller.get_setting(_PINNED_KEY, "1") == "1"
         self._apply_window_flags()
         self.setAttribute(Qt.WA_TranslucentBackground)
+        # Never steal focus from the user's active window when (re)shown.
+        self.setAttribute(Qt.WA_ShowWithoutActivating)
         self.setFixedSize(250, 168)
 
         panel = QFrame(self)
@@ -90,9 +93,9 @@ class FloatingWidget(QWidget):
     def _apply_window_flags(self):
         flags = Qt.FramelessWindowHint | Qt.Tool
         if self.pinned:
-            # Desktop-gadget style: keep it below normal windows so it behaves
-            # like part of the desktop rather than always hovering on top.
-            flags |= Qt.WindowStaysOnBottomHint
+            # Desktop-gadget style: keep it below normal windows and out of the
+            # focus chain so it behaves like part of the desktop, not a popup.
+            flags |= Qt.WindowStaysOnBottomHint | Qt.WindowDoesNotAcceptFocus
         else:
             flags |= Qt.WindowStaysOnTopHint
         self.setWindowFlags(flags)
@@ -103,9 +106,16 @@ class FloatingWidget(QWidget):
         self.controller.set_setting(_PINNED_KEY, "1" if pinned else "0")
         was_visible = self.isVisible()
         self._apply_window_flags()      # changing flags requires re-showing
-        if was_visible:
-            self.show()
         self._restore_position()
+        if was_visible:
+            self.show()                 # showEvent sinks it to the bottom if pinned
+
+    def showEvent(self, e):
+        super().showEvent(e)
+        # The stays-on-bottom hint alone is unreliable on some Windows setups, so
+        # actively push the widget beneath other windows each time it appears.
+        if self.pinned:
+            self.lower()
 
     # ----- state -------------------------------------------------------------
     def set_active_substance(self, sid: str):

@@ -38,6 +38,9 @@ ArchitecturesInstallIn64BitMode=x64compatible
 ; don't relaunch the stale copy - a fresh one starts post-install if requested.
 CloseApplications=yes
 RestartApplications=no
+; Branded installer + Add/Remove Programs icon (the coffee-cup + clock mark).
+SetupIconFile=pktracker.ico
+UninstallDisplayIcon={app}\{#MyAppExeName}
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

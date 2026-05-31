@@ -41,6 +41,88 @@ def _slug(name: str) -> str:
     return s or "substance"
 
 
+class SettingsDialog(QDialog):
+    """One place to control appearance and the floating widget.
+
+    Changes apply live as they are toggled (it is a preferences panel, not a
+    save/cancel form) and are persisted through the controller. It delegates the
+    actual work to the main window so there is a single source of truth for how
+    the theme and widget are applied.
+    """
+
+    def __init__(self, controller, window, parent=None):
+        super().__init__(parent)
+        self.controller = controller
+        self.window = window
+        self.setWindowTitle("Settings")
+        self.setMinimumWidth(440)
+
+        root = QVBoxLayout(self)
+        root.setSpacing(10)
+
+        # --- Appearance ---
+        root.addWidget(self._h2("Appearance"))
+        appf = QFormLayout()
+        self.theme_box = QComboBox()
+        self.theme_box.addItems(["Dark", "Light"])
+        self.theme_box.setCurrentText(controller.get_setting("ui_theme", "dark").capitalize())
+        self.theme_box.currentTextChanged.connect(
+            lambda t: self.window.set_theme(t.lower())
+        )
+        appf.addRow("Theme", self.theme_box)
+        root.addLayout(appf)
+
+        # --- Floating widget ---
+        root.addWidget(self._h2("Floating widget"))
+        self.show_widget = QCheckBox("Show the floating widget")
+        self.show_widget.setChecked(window.widget.isVisible())
+        self.show_widget.toggled.connect(self.window.set_widget_visible)
+        root.addWidget(self.show_widget)
+
+        modef = QFormLayout()
+        self.mode_box = QComboBox()
+        self.mode_box.addItems([
+            "Pinned to desktop (behind windows)",
+            "Float on top of everything",
+        ])
+        self.mode_box.setCurrentIndex(0 if window.widget.pinned else 1)
+        self.mode_box.currentIndexChanged.connect(
+            lambda idx: self.window.set_widget_pinned(idx == 0)
+        )
+        modef.addRow("Behaviour", self.mode_box)
+        root.addLayout(modef)
+        hint = QLabel(
+            "Pinned sits on the desktop like a gadget; Float keeps it above every "
+            "other window. Drag the widget anywhere; right-click it for the same options."
+        )
+        hint.setObjectName("Muted")
+        hint.setWordWrap(True)
+        root.addWidget(hint)
+
+        # --- Personalisation (delegates to the existing dialogs) ---
+        root.addWidget(self._h2("Personalisation"))
+        prow = QHBoxLayout()
+        cal = QPushButton("Calibration…")
+        cal.clicked.connect(self.window._open_calibration)
+        cus = QPushButton("New substance…")
+        cus.clicked.connect(self.window._open_custom)
+        prow.addWidget(cal)
+        prow.addWidget(cus)
+        prow.addStretch(1)
+        root.addLayout(prow)
+
+        root.addStretch(1)
+        buttons = QDialogButtonBox(QDialogButtonBox.Close)
+        buttons.rejected.connect(self.reject)
+        buttons.accepted.connect(self.accept)
+        root.addWidget(buttons)
+
+    def _h2(self, text):
+        lbl = QLabel(text)
+        lbl.setObjectName("H2")
+        return lbl
+
+
 def _clamp(v, lo, hi):
     return max(lo, min(hi, v))
 

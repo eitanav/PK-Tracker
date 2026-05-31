@@ -62,6 +62,18 @@ class TimelinePlot(pg.PlotWidget):
         self.vb2.setGeometry(self.p1.vb.sceneBoundingRect())
         self.vb2.linkedViewChanged(self.p1.vb, self.vb2.XAxis)
 
+    def apply_theme(self):
+        """Refresh static chrome (background, axes) after a theme switch.
+
+        Curves themselves are redrawn from scratch on the next refresh, so only
+        the persistent background and axis colours need updating here.
+        """
+        self.setBackground(COLORS["bg"])
+        self.p1.getAxis("left").setTextPen(COLORS["subtext"])
+        self.p1.getAxis("bottom").setTextPen(COLORS["subtext"])
+        self.p1.getAxis("right").setTextPen(COLORS["accent"])
+        self.p1.getAxis("right").setLabel("Effect", units="%", color=COLORS["accent"])
+
     # ----- lifecycle ---------------------------------------------------------
     def set_now(self, now_ts: float):
         self._now_ts = now_ts
@@ -151,6 +163,9 @@ class Sparkline(pg.PlotWidget):
 
     def set_now(self, ts):
         self._now_ts = ts
+
+    def apply_theme(self):
+        self.setBackground(COLORS["panel"])
 
     def update_trace(self, x, y, color):
         self.clear()

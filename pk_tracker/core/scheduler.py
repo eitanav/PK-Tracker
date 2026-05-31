@@ -94,7 +94,7 @@ def sleep_cutoff(
     now: datetime,
     bedtime: datetime,
     amount: float | None = None,
-    target_fraction: float = 0.15,
+    target_fraction: float | None = None,
     absolute_target: float | None = None,
 ) -> SleepCutoff:
     """Latest time to take a dose of ``amount`` and still sleep at ``bedtime``.
@@ -102,9 +102,11 @@ def sleep_cutoff(
     The bedtime ceiling (max acceptable concentration at lights-out) is, in
     priority order:
       1. ``absolute_target`` if given,
-      2. the substance's physiological ``sleep_threshold`` if defined
+      2. ``target_fraction`` of the candidate dose's own peak if given (this is
+         how the user's "≤ X% of peak in the blood by bedtime" setting feeds in),
+      3. the substance's physiological ``sleep_threshold`` if defined
          (e.g. caffeine 0.6 mg/L from the literature),
-      3. otherwise ``target_fraction`` of the candidate dose's own peak.
+      4. otherwise 15% of the candidate dose's own peak.
 
     We then find the latest dose time whose contribution at bedtime, on top of
     whatever the already-logged doses project to, stays under the ceiling. The
@@ -126,10 +128,12 @@ def sleep_cutoff(
 
     if absolute_target is not None:
         ceiling = absolute_target
+    elif target_fraction is not None:
+        ceiling = target_fraction * cmax
     elif sub.sleep_threshold is not None:
         ceiling = sub.sleep_threshold
     else:
-        ceiling = target_fraction * cmax
+        ceiling = 0.15 * cmax
 
     existing_at_bed = float(timeline.concentration_at(bedtime))
     headroom = ceiling - existing_at_bed

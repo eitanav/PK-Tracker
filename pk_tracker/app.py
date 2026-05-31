@@ -31,10 +31,10 @@ def main() -> int:
     app.setApplicationName("PK Tracker")
     # The app lives in the tray; closing the main window must not quit it.
     app.setQuitOnLastWindowClosed(False)
-    apply_theme(app)
 
     db = Database(default_db_path())
     controller = AppController(db)
+    apply_theme(app, controller.get_setting("ui_theme", "dark"))
     window = MainWindow(controller)
 
     if controller.get_setting("ui_disclaimer_ack") != "1":

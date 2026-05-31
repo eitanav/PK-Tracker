@@ -71,9 +71,10 @@ class AppController:
     def redose_info(self, substance_id: str, now: datetime | None = None):
         return scheduler.redose_info(self.timeline(substance_id), now or now_utc())
 
-    def sleep_cutoff(self, substance_id, bedtime, amount=None, now=None):
+    def sleep_cutoff(self, substance_id, bedtime, amount=None, now=None, target_fraction=None):
         return scheduler.sleep_cutoff(
-            self.timeline(substance_id), now or now_utc(), bedtime, amount=amount
+            self.timeline(substance_id), now or now_utc(), bedtime,
+            amount=amount, target_fraction=target_fraction,
         )
 
     def overload_info(self, substance_id, now=None):

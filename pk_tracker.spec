@@ -57,4 +57,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon="installer/pktracker.ico",   # coffee-cup + clock app mark (see tools/make_icon.py)
 )
