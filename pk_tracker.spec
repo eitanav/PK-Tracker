@@ -22,11 +22,14 @@ a = Analysis(
     hiddenimports=["pyqtgraph"],
     hookspath=[],
     runtime_hooks=[],
-    # Trim Qt modules the app does not use, to keep the binary smaller.
+    # Trim large Qt modules the app clearly does not use, to keep the binary
+    # smaller. Kept conservative: QtNetwork/QtSql are left in because PySide6 and
+    # pyqtgraph can pull them in transitively, and a missing transitive import
+    # would crash at runtime.
     excludes=[
         "PySide6.QtQml", "PySide6.QtQuick", "PySide6.QtWebEngineCore",
         "PySide6.QtWebEngineWidgets", "PySide6.Qt3DCore", "PySide6.QtMultimedia",
-        "PySide6.QtPdf", "PySide6.QtCharts", "PySide6.QtSql", "PySide6.QtNetwork",
+        "PySide6.QtCharts",
         "tkinter", "matplotlib",
     ],
     cipher=block_cipher,
