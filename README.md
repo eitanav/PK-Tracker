@@ -12,17 +12,27 @@ population-average model; individual metabolism varies widely.
 
 > 🌐 **Languages:** English · [עברית — מדריך שימוש מלא](README.he.md)
 
-## ⬇️ Download for Windows (no command line)
+## ⬇️ Install on Windows (no command line)
 
-Grab a prebuilt build from the **[Releases page](../../releases/latest)** — no Python, no terminal:
+No Python, no terminal. Four steps:
 
-- **`PKTracker-Setup.exe`** — double-click, click Next → Finish. Adds a Start-menu
-  (and optional desktop) shortcut and launches the app. No admin rights needed.
-- **`PKTracker-portable-windows.zip`** — right-click → Extract All, then
-  double-click **`PKTracker.exe`**. Nothing to install.
+1. **Download** → **[PKTracker-Setup.exe](https://github.com/eitanav/coffe-thing/releases/download/v1.0.0/PKTracker-Setup.exe)** (the download starts immediately; ~100 MB).
+2. **Double-click** the downloaded file.
+3. If a blue **"Windows protected your PC"** box appears (normal for new, unsigned
+   apps — not a virus): click **More info → Run anyway**.
+4. Click **Next → Finish**. Done — it adds a Start-menu (and optional desktop)
+   shortcut and launches. Next time, just click the **PK Tracker** icon.
 
-> The Releases builds are produced automatically on a clean Windows machine by
-> GitHub Actions. Running from source (below) still works on any OS.
+<details>
+<summary>Prefer no install? Portable version</summary>
+
+Download **[PKTracker-portable-windows.zip](https://github.com/eitanav/coffe-thing/releases/download/v1.0.0/PKTracker-portable-windows.zip)**,
+right-click → **Extract All**, then double-click **`PKTracker.exe`**.
+</details>
+
+> All downloads are also on the **[Releases page](../../releases/latest)**. Builds
+> are produced automatically on a clean Windows machine by GitHub Actions; running
+> from source (below) still works on any OS.
 
 ---
 
