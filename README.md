@@ -97,8 +97,12 @@ database lives at `~/.pk_tracker/pk_tracker.sqlite`.
    cutoff** (set a bedtime to see the latest safe coffee time).
 6. **Alcohol** shows BAC and estimated times to drop below the driving limit and
    to reach 0.00 — estimates only, never a basis for deciding to drive.
-7. **Floating widget & tray** — toggle the always-on-top widget; closing the
-   main window keeps the app running in the system tray.
+7. **Floating widget & tray** — a small status widget opens automatically at
+   startup. Right-click it (or use the tray menu) to switch between **Float on
+   top** and **Pin to desktop** (sits behind other windows like a gadget), or
+   hide it. Closing the main window keeps the app running in the system tray.
+   Note: this is the app's own floating panel, not a Windows 11 Widgets-board
+   widget (a different Microsoft technology).
 8. **Calibration** sets body mass, sex, and per-substance tolerance;
    **New substance…** adds your own.
 

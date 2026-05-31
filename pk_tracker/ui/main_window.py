@@ -100,13 +100,20 @@ class MainWindow(QMainWindow):
         self.widget = FloatingWidget(controller, self.active_sid, on_change=self.refresh_all)
         self.tray = AppTray(
             self.icon, on_show=self.show_dashboard,
-            on_toggle_widget=self.toggle_widget, on_quit=self.quit_app, parent=self,
+            on_toggle_widget=self.toggle_widget, on_toggle_pin=self.toggle_widget_pin,
+            on_quit=self.quit_app, parent=self,
         )
         if QSystemTrayIcon.isSystemTrayAvailable():
             self.tray.show()
 
         self._sync_substance_widgets()
         self.refresh_all()
+
+        # Show the floating widget automatically unless the user hid it last time
+        # (default on, so it appears on first run instead of having to be summoned).
+        if self.controller.get_setting("ui_widget_visible", "1") == "1":
+            self.widget.show()
+            self.widget.refresh()
 
         self.timer = QTimer(self)
         self.timer.setInterval(20_000)   # redraw + alert check only
@@ -591,9 +598,19 @@ class MainWindow(QMainWindow):
     def toggle_widget(self):
         if self.widget.isVisible():
             self.widget.hide()
+            self.controller.set_setting("ui_widget_visible", "0")
         else:
             self.widget.show()
             self.widget.refresh()
+            self.controller.set_setting("ui_widget_visible", "1")
+
+    def toggle_widget_pin(self):
+        # Flip between float-on-top and pinned-to-desktop, making sure it's shown.
+        self.widget.set_pinned(not self.widget.pinned)
+        if not self.widget.isVisible():
+            self.widget.show()
+            self.controller.set_setting("ui_widget_visible", "1")
+        self.widget.refresh()
 
     def quit_app(self):
         self._quitting = True

@@ -53,12 +53,13 @@ def make_app_icon(accent: str = COLORS["accent"], size: int = 64) -> QIcon:
 
 
 class AppTray(QSystemTrayIcon):
-    def __init__(self, icon: QIcon, *, on_show, on_toggle_widget, on_quit, parent=None):
+    def __init__(self, icon: QIcon, *, on_show, on_toggle_widget, on_toggle_pin, on_quit, parent=None):
         super().__init__(icon, parent)
         self.setToolTip("PK Tracker")
         menu = QMenu()
         menu.addAction("Show dashboard", on_show)
         menu.addAction("Toggle widget", on_toggle_widget)
+        menu.addAction("Pin widget to desktop", on_toggle_pin)
         menu.addSeparator()
         menu.addAction("Quit", on_quit)
         self.setContextMenu(menu)
