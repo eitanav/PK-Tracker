@@ -718,6 +718,9 @@ class MainWindow(QMainWindow):
         if not self.widget.isVisible():           # switching mode also reveals it
             self.set_widget_visible(True)
 
+    def set_widget_close_button(self, visible: bool):
+        self.widget.set_close_button_visible(visible)
+
     def toggle_widget_pin(self):
         self.set_widget_pinned(not self.widget.pinned)
 

@@ -79,6 +79,11 @@ class SettingsDialog(QDialog):
         self.show_widget.toggled.connect(self.window.set_widget_visible)
         root.addWidget(self.show_widget)
 
+        self.close_btn_chk = QCheckBox("Show a close (✕) button on the widget")
+        self.close_btn_chk.setChecked(window.widget.close_btn.isVisible())
+        self.close_btn_chk.toggled.connect(self.window.set_widget_close_button)
+        root.addWidget(self.close_btn_chk)
+
         modef = QFormLayout()
         self.mode_box = QComboBox()
         self.mode_box.addItems([

@@ -28,6 +28,7 @@ from .theme import COLORS, mono_font
 
 _POS_KEY = "ui_widget_pos"
 _PINNED_KEY = "ui_widget_pinned"
+_CLOSE_BTN_KEY = "ui_widget_close_btn"
 
 
 class FloatingWidget(QWidget):
@@ -63,6 +64,15 @@ class FloatingWidget(QWidget):
         self.badge = QLabel()
         self.badge.setObjectName("Muted")
         top.addWidget(self.badge)
+        # A small close (✕) button to hide the widget directly. Optional — it can
+        # be turned off in Settings for a cleaner, gadget-like look.
+        self.close_btn = QToolButton()
+        self.close_btn.setText("✕")
+        self.close_btn.setObjectName("WidgetClose")
+        self.close_btn.setCursor(Qt.PointingHandCursor)
+        self.close_btn.setToolTip("Hide widget (bring it back from Settings or the tray)")
+        self.close_btn.clicked.connect(self._on_close)
+        top.addWidget(self.close_btn)
         root.addLayout(top)
 
         self.value_label = QLabel("—")
@@ -86,8 +96,20 @@ class FloatingWidget(QWidget):
         bottom.addWidget(self.dose_btn)
         root.addLayout(bottom)
 
+        self.close_btn.setVisible(self.controller.get_setting(_CLOSE_BTN_KEY, "1") == "1")
         self._restore_position()
         self.set_active_substance(sid)
+
+    # ----- close button ------------------------------------------------------
+    def _on_close(self):
+        """Hide the widget and remember it, so it stays hidden next launch."""
+        self._save_position()
+        self.hide()
+        self.controller.set_setting("ui_widget_visible", "0")
+
+    def set_close_button_visible(self, visible: bool):
+        self.close_btn.setVisible(visible)
+        self.controller.set_setting(_CLOSE_BTN_KEY, "1" if visible else "0")
 
     # ----- window mode (float-on-top vs pinned-to-desktop) -------------------
     def _apply_window_flags(self):

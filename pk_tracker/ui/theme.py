@@ -119,6 +119,12 @@ def _stylesheet() -> str:
     QPushButton#Accent:hover {{ background-color: {c['accent_hover']}; }}
     QPushButton#Ghost {{ background-color: transparent; border: 1px solid {c['border']}; }}
 
+    QToolButton#WidgetClose {{
+        background: transparent; border: none; color: {c['muted']};
+        font-size: 13px; font-weight: 700; padding: 0 2px;
+    }}
+    QToolButton#WidgetClose:hover {{ color: {c['danger']}; }}
+
     QListWidget, QTableWidget {{
         background-color: {c['panel']};
         border: 1px solid {c['border']};

@@ -62,6 +62,14 @@ class TimelinePlot(pg.PlotWidget):
         self.vb2.setGeometry(self.p1.vb.sceneBoundingRect())
         self.vb2.linkedViewChanged(self.p1.vb, self.vb2.XAxis)
 
+    def resizeEvent(self, ev):
+        # The effect (right-axis) ViewBox must track the main plot's geometry, or
+        # the blue trace drifts/clips and stops following pans. sigResized alone
+        # can miss the initial layout and some resizes, so sync here too.
+        super().resizeEvent(ev)
+        if getattr(self, "vb2", None) is not None:
+            self._sync_views()
+
     def apply_theme(self):
         """Refresh static chrome (background, axes) after a theme switch.
 
@@ -82,6 +90,16 @@ class TimelinePlot(pg.PlotWidget):
         for it, target in self._items:
             target.removeItem(it)
         self._items = []
+        self.vb2.setYRange(0, 105, padding=0)   # reset; _grow_effect_axis expands it
+
+    def _grow_effect_axis(self, y):
+        """Expand the right (effect) axis so a curve peaking above the recent peak
+        — e.g. a just-logged dose still rising past 100% — stays fully visible
+        instead of clipping at the top."""
+        arr = np.asarray(y, float)
+        if arr.size:
+            top = max(105.0, float(np.nanmax(arr)) * 1.08)
+            self.vb2.setYRange(0, top, padding=0)
 
     def _add(self, item, right: bool = False):
         target = self.vb2 if right else self.p1
@@ -114,10 +132,12 @@ class TimelinePlot(pg.PlotWidget):
         self._split_line(x, concentration, color, width, right=False, fill=primary)
         if primary and effect_pct is not None:
             self._split_line(x, effect_pct, COLORS["accent"], 1.8, right=True, fill=False)
+            self._grow_effect_axis(effect_pct)
 
     def add_overlay_effect(self, x, effect_pct, color):
         """In overlay mode, compare substances by effect-% on the right axis."""
         self._split_line(x, effect_pct, color, 1.4, right=True, fill=False)
+        self._grow_effect_axis(effect_pct)
 
     def add_hline(self, level, color, label):
         line = pg.InfiniteLine(
@@ -146,6 +166,7 @@ class TimelinePlot(pg.PlotWidget):
 
     def set_x_window(self, start_ts, end_ts):
         self.p1.setXRange(start_ts, end_ts, padding=0.02)
+        self._sync_views()   # keep the effect ViewBox aligned after every redraw
 
 
 class Sparkline(pg.PlotWidget):

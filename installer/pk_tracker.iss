@@ -60,6 +60,11 @@ Name: "{autodesktop}\PK Tracker"; Filename: "{app}\{#MyAppExeName}"; Tasks: desk
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch PK Tracker now"; Flags: nowait postinstall skipifsilent
 
+[UninstallDelete]
+; Remove the whole install folder so nothing is left behind. (User data lives in
+; %USERPROFILE%\.pk_tracker and is intentionally preserved across reinstalls.)
+Type: filesandordirs; Name: "{app}"
+
 [Code]
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
@@ -73,4 +78,16 @@ begin
   Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#MyAppExeName}', '',
        SW_HIDE, ewWaitUntilTerminated, ResultCode);
   Result := '';
+end;
+
+function InitializeUninstall(): Boolean;
+var
+  ResultCode: Integer;
+begin
+  // The app usually lives in the system tray, so it can still be running at
+  // uninstall time and lock its files, which is what makes Windows report
+  // "some elements could not be removed". Force it closed first.
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM {#MyAppExeName}', '',
+       SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Result := True;
 end;
