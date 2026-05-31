@@ -1,0 +1,86 @@
+name: Build Windows installer
+
+# Builds the Windows app on a real Windows machine (PyInstaller can only build
+# a .exe on the OS it runs on). Produces two downloadable artifacts:
+#   * PKTracker-Setup.exe            - double-click installer (no admin needed)
+#   * PKTracker-portable-windows.zip - unzip and run, nothing to install
+#
+# Runs automatically when a version tag (vX.Y.Z) is pushed -> attaches both to a
+# GitHub Release. Can also be run manually from the Actions tab (workflow_dispatch),
+# which uploads the files as build artifacts.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write   # allow creating the Release and uploading assets
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Run the test suite
+        run: python -m pytest pk_tracker/tests/ -q
+
+      - name: Build the one-file executable
+        run: pyinstaller --noconfirm pk_tracker.spec
+
+      - name: Create the portable ZIP
+        run: |
+          Compress-Archive -Path dist/PKTracker.exe -DestinationPath dist/PKTracker-portable-windows.zip -Force
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build the installer
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\pk_tracker.iss'
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: |
+            dist/PKTracker-Setup.exe
+            dist/PKTracker-portable-windows.zip
+          if-no-files-found: error
+
+      - name: Publish to the Release (on a version tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: PK Tracker ${{ github.ref_name }}
+          body: |
+            ## Download & install — no command line needed
+
+            **Easiest:** download **PKTracker-Setup.exe** below and double-click it.
+            Click through Next → Finish. It adds a Start-menu (and optional desktop)
+            shortcut and launches the app. No administrator rights required.
+
+            **Portable (no install):** download **PKTracker-portable-windows.zip**,
+            right-click → Extract All, then double-click **PKTracker.exe**.
+
+            ---
+            Estimates from population-average pharmacokinetic models. Not medical
+            advice. See the README for the science and scope limits.
+          files: |
+            dist/PKTracker-Setup.exe
+            dist/PKTracker-portable-windows.zip
+          fail_on_unmatched_files: true

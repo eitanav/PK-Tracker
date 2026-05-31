@@ -12,6 +12,18 @@ population-average model; individual metabolism varies widely.
 
 > 🌐 **Languages:** English · [עברית — מדריך שימוש מלא](README.he.md)
 
+## ⬇️ Download for Windows (no command line)
+
+Grab a prebuilt build from the **[Releases page](../../releases/latest)** — no Python, no terminal:
+
+- **`PKTracker-Setup.exe`** — double-click, click Next → Finish. Adds a Start-menu
+  (and optional desktop) shortcut and launches the app. No admin rights needed.
+- **`PKTracker-portable-windows.zip`** — right-click → Extract All, then
+  double-click **`PKTracker.exe`**. Nothing to install.
+
+> The Releases builds are produced automatically on a clean Windows machine by
+> GitHub Actions. Running from source (below) still works on any OS.
+
 ---
 
 ## What it does
