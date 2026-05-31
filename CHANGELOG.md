@@ -1,0 +1,106 @@
+# Changelog
+
+All notable changes to **PK Tracker** are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and the project aims to follow [Semantic Versioning](https://semver.org/).
+
+> **Note on releases.** Windows binaries are currently published to a single
+> rolling GitHub release tagged `v1.0.0` (the "latest" download channel), while
+> the *app* version below tracks the real feature history. Aligning the two —
+> one GitHub release per version — is tracked in [`TODO.md`](TODO.md).
+
+## [Unreleased]
+
+### To be decided
+- **Sleep-cutoff redesign.** The current "Target by bed = X % of peak" control is
+  unintuitive (the percentage refers to a single dose's own peak blood level, and
+  caffeine's ~5 h half-life makes even 15 % land ~13 h before bed). Reworking it
+  around an intuitive mental model — caffeine left at bedtime in mg, a sensitivity
+  preset, or a plain hours-before-bed cutoff — plus a prominent "Latest coffee:
+  HH:MM" readout. Direction pending user input. See `TODO.md` §Sleep & timing.
+
+## [1.2.2] - 2026-05-31
+
+### Fixed
+- **App icon stayed as the old (floppy/Python) one on the desktop shortcut,
+  taskbar and in Explorer**, even though the running window showed the correct
+  coffee icon. The window icon is painted at runtime, so it was always right; the
+  *file* icon comes from the executable's embedded resource, which the previous
+  build now embeds correctly (1.2.1) — but Windows kept serving the **cached** old
+  icon for the same install path. The installer now refreshes the Windows icon
+  cache (`ie4uinit -show`) after installing, so the new icon appears immediately
+  instead of only after a reboot.
+
+### Added
+- Project **`CHANGELOG.md`** (this file) and a **`TODO.md`** roadmap of planned
+  features and fixes.
+
+### Changed
+- App version bumped to **1.2.2**.
+
+### Fixed
+- **Uninstall left files behind** ("some elements could not be removed"). The
+  tray-resident app held a lock on its own files; the uninstaller now force-closes
+  `PKTracker.exe` first and removes the whole install folder. User data in
+  `%UserProfile%\.pk_tracker` is intentionally preserved across reinstalls.
+- **Executable showed the default PyInstaller (floppy/Python) icon.** The bundled
+  `.ico` used PNG-compressed entries, which PyInstaller can silently drop when it
+  runs without Pillow (as in CI). Regenerated as classic 32-bit BMP/DIB entries so
+  the coffee-cup-and-clock icon embeds reliably.
+- **Effect (blue) trace clipped at the top and didn't follow panning.** Its
+  right-axis ViewBox now re-syncs geometry on resize and after every redraw, and
+  the axis grows past 100 % when a just-logged, still-rising dose projects above
+  the recent peak — so the curve stays fully visible and tracks the time axis.
+
+### Added
+- Optional **close (✕) button** on the floating widget, with a Settings toggle to
+  show or hide it (`ui_widget_close_btn`).
+
+## [1.2.0] - 2026-05-31
+
+### Added
+- **Settings panel** for app-wide preferences (theme, widget behaviour, sleep
+  cutoff) reachable from the main window and the tray.
+- **Light and dark themes**, switchable at runtime.
+- **Plot legend** distinguishing blood level (solid) from effect % (dashed,
+  right axis) and "so far" vs "projected".
+- **Alcohol feedback**: explicit sober/legal-limit projections with clear copy
+  that the model only ever predicts clearance, never suggests another drink.
+- **Configurable sleep cutoff** (bedtime + target) with a "coffee curfew" readout.
+- New **coffee-cup-and-clock app icon**.
+
+## [1.1.0] - 2026-05-31
+
+### Added
+- Floating widget now **auto-shows on startup** and offers a **pin-to-desktop**
+  mode (sits below other windows like a gadget) in addition to float-on-top. The
+  widget remembers its position and visibility between launches.
+
+### Fixed
+- Installer **auto-closes a running instance before upgrading**, so in-place
+  updates no longer fail with an "access denied" file lock.
+
+## [1.0.0] - 2026-05-30
+
+First complete, packaged release.
+
+### Added
+- **PK/PD engine** (milestone 1): tested one-compartment caffeine model
+  (Bateman absorption/elimination), Emax effect model, and an alcohol Widmark
+  zero-order model, with population-average constants and cited sources.
+- **Persistence** (milestone 2): local SQLite store for doses, substances,
+  profile and settings — local-only, never synced.
+- **Desktop UI** (milestones 3–7): main dashboard with interactive timeline
+  plot, dose logging with presets, history, a draggable always-available
+  **floating widget**, a **system-tray** menu, and a **calibration** flow to
+  personalise body mass / sensitivity.
+- **Extended-release model & alcohol absorption ramp** (milestone 8), plus
+  redose nudges and an overload ("diminishing returns") cue for caffeine.
+- **One-click Windows installer** (Inno Setup) and a **portable build**, both
+  produced by a GitHub Actions workflow.
+- **Documentation**: README covering the science, math, constants, sources and
+  scope limits, plus a Hebrew usage guide (`README.he.md`).
+
+[Unreleased]: https://github.com/eitanav/coffe-thing/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/eitanav/coffe-thing/releases/tag/v1.0.0

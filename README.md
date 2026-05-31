@@ -340,6 +340,11 @@ The spec bundles the data files (`schema.sql`, `substances.json`) at their
 package-relative paths and trims unused Qt modules. Build on the target OS to
 get a native binary (build on Windows for the `.exe`).
 
+## Changelog & roadmap
+
+Released changes are in [`CHANGELOG.md`](CHANGELOG.md); planned features and
+fixes are in [`TODO.md`](TODO.md).
+
 ## Roadmap / non-goals
 
 Implemented refinements: a bimodal extended-release model (two Bateman pulses —

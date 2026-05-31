@@ -9,7 +9,7 @@
 
 #define MyAppName "PK Tracker"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.0"
+  #define MyAppVersion "1.2.2"
 #endif
 #define MyAppPublisher "PK Tracker"
 #define MyAppExeName "PKTracker.exe"
@@ -58,6 +58,10 @@ Name: "{autoprograms}\PK Tracker"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\PK Tracker"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
+; Rebuild the Windows icon cache so the new app icon shows on the desktop
+; shortcut and taskbar right away. Without this, Windows can keep serving the
+; previously cached (default) icon for the same install path until a reboot.
+Filename: "{sys}\ie4uinit.exe"; Parameters: "-show"; Flags: runhidden skipifdoesntexist; StatusMsg: "Refreshing icons..."
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch PK Tracker now"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
