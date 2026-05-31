@@ -1,22 +1,38 @@
 name: Build Windows installer
 
-# Builds the Windows app on a real Windows machine (PyInstaller can only build
-# a .exe on the OS it runs on). Produces two downloadable artifacts:
+# Builds the Windows app on a real Windows machine (PyInstaller can only build a
+# .exe on the OS it runs on) and publishes two downloadable files to a GitHub
+# Release so anyone can install without a command line:
 #   * PKTracker-Setup.exe            - double-click installer (no admin needed)
 #   * PKTracker-portable-windows.zip - unzip and run, nothing to install
 #
-# Runs automatically when a version tag (vX.Y.Z) is pushed -> attaches both to a
-# GitHub Release. Can also be run manually from the Actions tab (workflow_dispatch),
-# which uploads the files as build artifacts.
+# Triggers:
+#   * push to the project's branch that touches the app or build files -> build
+#     and (re)publish the release. The release's tag is created by the workflow
+#     itself using the repository's built-in token, so no local tag push needed.
+#   * manual run from the Actions tab (workflow_dispatch), with an optional
+#     version input.
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag for the release (e.g. v1.0.0)"
+        required: false
+        default: "v1.0.0"
+  push:
+    branches:
+      - claude/epic-gates-aEct2
+    paths:
+      - "pk_tracker/**"
+      - "run.py"
+      - "requirements.txt"
+      - "pk_tracker.spec"
+      - "installer/**"
+      - ".github/workflows/build-windows.yml"
 
 permissions:
-  contents: write   # allow creating the Release and uploading assets
+  contents: write   # allow the workflow to create the tag, Release, and assets
 
 jobs:
   build-windows:
@@ -44,8 +60,7 @@ jobs:
         run: pyinstaller --noconfirm pk_tracker.spec
 
       - name: Create the portable ZIP
-        run: |
-          Compress-Archive -Path dist/PKTracker.exe -DestinationPath dist/PKTracker-portable-windows.zip -Force
+        run: Compress-Archive -Path dist/PKTracker.exe -DestinationPath dist/PKTracker-portable-windows.zip -Force
 
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
@@ -62,11 +77,11 @@ jobs:
             dist/PKTracker-portable-windows.zip
           if-no-files-found: error
 
-      - name: Publish to the Release (on a version tag)
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Publish the Release (creates the tag server-side)
         uses: softprops/action-gh-release@v2
         with:
-          name: PK Tracker ${{ github.ref_name }}
+          tag_name: ${{ github.event.inputs.version || 'v1.0.0' }}
+          name: PK Tracker ${{ github.event.inputs.version || 'v1.0.0' }}
           body: |
             ## Download & install — no command line needed
 
