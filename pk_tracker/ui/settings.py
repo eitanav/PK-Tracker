@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 
+from PySide6.QtCore import QTime
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -26,8 +27,11 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QSpinBox,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
+    QTimeEdit,
     QVBoxLayout,
 )
 
@@ -104,6 +108,75 @@ class SettingsDialog(QDialog):
         hint.setWordWrap(True)
         root.addWidget(hint)
 
+        # --- Sleep cutoff ---
+        root.addWidget(self._h2("Sleep cutoff"))
+        sf = QFormLayout()
+
+        self.s_bedtime = QTimeEdit()
+        self.s_bedtime.setDisplayFormat("HH:mm")
+        bh, bm = (int(x) for x in controller.get_setting("ui_bedtime", "23:00").split(":"))
+        self.s_bedtime.setTime(QTime(bh, bm))
+        sf.addRow("Bedtime", self.s_bedtime)
+
+        self.s_mode = QComboBox()
+        self.s_mode.addItems([
+            "Caffeine left at bedtime (mg)",
+            "Sensitivity preset",
+            "Hours before bed",
+        ])
+        self._sleep_modes = ["mg", "preset", "hours"]
+        cur_mode = controller.get_setting("ui_sleep_mode", "mg")
+        self.s_mode.setCurrentIndex(self._sleep_modes.index(cur_mode)
+                                    if cur_mode in self._sleep_modes else 0)
+        sf.addRow("Method", self.s_mode)
+
+        # One stacked value control so switching method never leaves empty rows.
+        self.s_value = QStackedWidget()
+        self.s_mg = QSpinBox()
+        self.s_mg.setRange(10, 200)
+        self.s_mg.setSingleStep(5)
+        self.s_mg.setSuffix(" mg by bed")
+        self.s_mg.setValue(int(float(controller.get_setting("ui_sleep_mg", "50"))))
+        self.s_value.addWidget(self.s_mg)
+        self.s_sens = QComboBox()
+        self.s_sens.addItems([
+            "Very sensitive  (~25 mg)",
+            "Average  (~50 mg)",
+            "Caffeine-resistant  (~100 mg)",
+        ])
+        self._sleep_sens = ["sensitive", "average", "resistant"]
+        cur_sens = controller.get_setting("ui_sleep_sensitivity", "average")
+        self.s_sens.setCurrentIndex(self._sleep_sens.index(cur_sens)
+                                    if cur_sens in self._sleep_sens else 1)
+        self.s_value.addWidget(self.s_sens)
+        self.s_hours = QSpinBox()
+        self.s_hours.setRange(3, 14)
+        self.s_hours.setSuffix(" h before bed")
+        self.s_hours.setValue(int(float(controller.get_setting("ui_sleep_hours", "8"))))
+        self.s_value.addWidget(self.s_hours)
+        self.s_value.setCurrentIndex(self.s_mode.currentIndex())
+        sf.addRow("Target", self.s_value)
+        root.addLayout(sf)
+
+        sleep_help = QLabel(
+            "How late you can have caffeine. The default keeps caffeine still in "
+            "your body at bedtime at or below a target amount. Research (Drake 2013; "
+            "SLEEP 2025) finds caffeine even 6 h before bed disrupts sleep — a small "
+            "coffee needs ~4 h to clear enough, a standard cup ~9 h. ~50 mg by "
+            "bedtime suits average sensitivity; aim ~25 mg if caffeine hits your "
+            "sleep hard, ~100 mg if it barely does. Not medical advice."
+        )
+        sleep_help.setObjectName("Muted")
+        sleep_help.setWordWrap(True)
+        root.addWidget(sleep_help)
+
+        # Wire up after initial values are set, so we don't fire mid-construction.
+        self.s_bedtime.timeChanged.connect(self._on_sleep_changed)
+        self.s_mode.currentIndexChanged.connect(self._on_sleep_mode_changed)
+        self.s_mg.valueChanged.connect(self._on_sleep_changed)
+        self.s_sens.currentIndexChanged.connect(self._on_sleep_changed)
+        self.s_hours.valueChanged.connect(self._on_sleep_changed)
+
         # --- Personalisation (delegates to the existing dialogs) ---
         root.addWidget(self._h2("Personalisation"))
         prow = QHBoxLayout()
@@ -126,6 +199,21 @@ class SettingsDialog(QDialog):
         lbl = QLabel(text)
         lbl.setObjectName("H2")
         return lbl
+
+    # ----- sleep cutoff ------------------------------------------------------
+    def _on_sleep_mode_changed(self, idx: int):
+        self.s_value.setCurrentIndex(idx)
+        self._on_sleep_changed()
+
+    def _on_sleep_changed(self, *_):
+        c = self.controller
+        t = self.s_bedtime.time()
+        c.set_setting("ui_bedtime", f"{t.hour():02d}:{t.minute():02d}")
+        c.set_setting("ui_sleep_mode", self._sleep_modes[self.s_mode.currentIndex()])
+        c.set_setting("ui_sleep_mg", str(self.s_mg.value()))
+        c.set_setting("ui_sleep_sensitivity", self._sleep_sens[self.s_sens.currentIndex()])
+        c.set_setting("ui_sleep_hours", str(self.s_hours.value()))
+        self.window.refresh_sleep_settings()
 
 
 def _clamp(v, lo, hi):

@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import timedelta, timezone
 
-from PySide6.QtCore import Qt, QTime, QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -35,12 +35,11 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QSystemTrayIcon,
-    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
 
-from ..controller import now_utc
+from ..controller import SLEEP_SENSITIVITY_MG, now_utc
 from . import status
 from .plots import TimelinePlot
 from .settings import CalibrationDialog, CustomSubstanceDialog, SettingsDialog
@@ -276,44 +275,28 @@ class MainWindow(QMainWindow):
         self.action_chip.setFont(mono_font(13, 600))
         v.addWidget(self.action_chip)
 
-        # Sleep cutoff.
+        # Sleep cutoff readout. The method (mg / sensitivity / hours) and bedtime
+        # are configured in Settings → Sleep cutoff; this just shows the answer.
         self.sleep_panel = QWidget()
         sv = QVBoxLayout(self.sleep_panel)
         sv.setContentsMargins(0, 0, 0, 0)
         sv.addWidget(self._h2("Sleep cutoff"))
-        srow = QHBoxLayout()
-        srow.addWidget(QLabel("Bedtime"))
-        self.bedtime = QTimeEdit()
-        self.bedtime.setDisplayFormat("HH:mm")
-        saved = self.controller.get_setting("ui_bedtime", "23:00")
-        hh, mm = (int(x) for x in saved.split(":"))
-        self.bedtime.setTime(QTime(hh, mm))
-        self.bedtime.timeChanged.connect(self._on_bedtime_changed)
-        srow.addWidget(self.bedtime)
-        srow.addStretch(1)
-        sv.addLayout(srow)
 
-        # How much caffeine you'll tolerate still in your blood at bedtime, as a
-        # percentage of one dose's peak. Lower = stricter cutoff + earlier nudge.
-        trow = QHBoxLayout()
-        trow.addWidget(QLabel("Target by bed"))
-        self.sleep_target = QSpinBox()
-        self.sleep_target.setRange(5, 90)
-        self.sleep_target.setSuffix(" % of peak")
-        self.sleep_target.setValue(int(self.controller.get_setting("ui_sleep_target_pct", "15")))
-        self.sleep_target.setToolTip(
-            "Caffeine left in your blood at bedtime, as % of one dose's peak. "
-            "Lower is stricter. You'll get a tray nudge ~30 min before the cutoff."
-        )
-        self.sleep_target.valueChanged.connect(self._on_sleep_target_changed)
-        trow.addWidget(self.sleep_target)
-        trow.addStretch(1)
-        sv.addLayout(trow)
+        self.sleep_headline = QLabel("—")
+        self.sleep_headline.setObjectName("H2")
+        self.sleep_headline.setStyleSheet(f"color: {COLORS['accent']};")
+        self.sleep_headline.setWordWrap(True)
+        sv.addWidget(self.sleep_headline)
 
         self.sleep_result = QLabel("—")
         self.sleep_result.setObjectName("Sub")
         self.sleep_result.setWordWrap(True)
         sv.addWidget(self.sleep_result)
+
+        self.sleep_config = QLabel("")
+        self.sleep_config.setObjectName("Muted")
+        self.sleep_config.setWordWrap(True)
+        sv.addWidget(self.sleep_config)
         v.addWidget(self.sleep_panel)
 
         # Alcohol clearance.
@@ -572,28 +555,70 @@ class MainWindow(QMainWindow):
 
     _SLEEP_LEAD_MIN = 30   # how long before the cutoff to nudge "stop drinking"
 
-    def _refresh_sleep_cutoff(self, now):
-        bt = self.bedtime.time()
-        bedtime = self._next_datetime_for(now, bt.hour(), bt.minute())
-        pct = float(self.sleep_target.value())
-        res = self.controller.sleep_cutoff(self.active_sid, bedtime, target_fraction=pct / 100.0)
-        sub = self.controller.substance(self.active_sid)
-        if res.feasible and res.cutoff_at is not None:
-            self.sleep_result.setText(
-                f"Latest {sub.name.lower()} dose: {status.fmt_clock(res.cutoff_at)} "
-                f"to stay ≤ {pct:.0f}% (≈ {res.ceiling * sub.conc_scale:.2f} {sub.conc_unit}) "
-                f"at {status.fmt_clock(bedtime)}."
-            )
+    def _sleep_config(self):
+        """Read the sleep-cutoff preferences (set in Settings) into a tuple."""
+        c = self.controller
+        mode = c.get_setting("ui_sleep_mode", "mg")
+        hh, mm = (int(x) for x in c.get_setting("ui_bedtime", "23:00").split(":"))
+        hours = float(c.get_setting("ui_sleep_hours", "8"))
+        if mode == "preset":
+            sens = c.get_setting("ui_sleep_sensitivity", "average")
+            target_mg = SLEEP_SENSITIVITY_MG.get(sens, 50.0)
         else:
-            self.sleep_result.setText(f"No safe dose before bedtime — {res.reason}.")
-        self._check_sleep_alert(now, bedtime, res, sub, pct)
+            target_mg = float(c.get_setting("ui_sleep_mg", "50"))
+        return mode, (hh, mm), target_mg, hours
 
-    def _on_sleep_target_changed(self):
-        self.controller.set_setting("ui_sleep_target_pct", str(self.sleep_target.value()))
-        self._sleep_notified.clear()    # new threshold ⇒ allow a fresh nudge
+    def _refresh_sleep_cutoff(self, now):
+        mode, (hh, mm), target_mg, hours = self._sleep_config()
+        bedtime = self._next_datetime_for(now, hh, mm)
+        res = self.controller.sleep_cutoff(
+            self.active_sid, bedtime, mode=mode, target_mg=target_mg, hours=hours,
+        )
+        sub = self.controller.substance(self.active_sid)
+        self._render_sleep(res, sub, mode, bedtime, target_mg, hours)
+        self._check_sleep_alert(now, bedtime, res, sub)
+
+    def _render_sleep(self, res, sub, mode, bedtime, target_mg, hours):
+        clk = status.fmt_clock
+        name = sub.name.lower()
+        if mode == "hours":
+            self.sleep_config.setText(f"Bedtime {clk(bedtime)} · stop {hours:.0f} h before · change in Settings")
+        else:
+            self.sleep_config.setText(f"Bedtime {clk(bedtime)} · target ≤ {target_mg:.0f} mg by bed · change in Settings")
+
+        if res.feasible and res.cutoff_at is not None:
+            self.sleep_headline.setText(f"☕ Latest {name}: {clk(res.cutoff_at)}")
+            if mode == "hours":
+                self.sleep_result.setText(f"A flat cutoff {hours:.0f} h before your {clk(bedtime)} bedtime.")
+            else:
+                existing = self.controller.concentration_to_mg(self.active_sid, res.existing_at_bedtime)
+                self.sleep_result.setText(
+                    f"Keeps {name} at or below ~{target_mg:.0f} mg in your body at "
+                    f"{clk(bedtime)} (already logged → ~{existing:.0f} mg by then)."
+                )
+        else:
+            self.sleep_headline.setText(f"☕ No more {name} before bed")
+            if mode == "hours":
+                self.sleep_result.setText(f"You're already within {hours:.0f} h of {clk(bedtime)}.")
+            else:
+                existing = self.controller.concentration_to_mg(self.active_sid, res.existing_at_bedtime)
+                if existing > target_mg:
+                    self.sleep_result.setText(
+                        f"What you've already had projects to ~{existing:.0f} mg at {clk(bedtime)}, "
+                        f"over your ~{target_mg:.0f} mg target."
+                    )
+                else:
+                    self.sleep_result.setText(
+                        f"Even a {name} now likely wouldn't clear to ~{target_mg:.0f} mg by "
+                        f"{clk(bedtime)} — {res.reason}."
+                    )
+
+    def refresh_sleep_settings(self):
+        """Called by the Settings dialog when any sleep preference changes."""
+        self._sleep_notified.clear()
         self._refresh_status()
 
-    def _check_sleep_alert(self, now, bedtime, res, sub, pct):
+    def _check_sleep_alert(self, now, bedtime, res, sub):
         """Nudge ~30 min before the latest-coffee time so you stop in advance."""
         sid = self.active_sid
         # Only nudge people who are actually drinking this substance.
@@ -607,7 +632,7 @@ class MainWindow(QMainWindow):
                 self.tray.showMessage(
                     "Coffee curfew",
                     f"Last {sub.name.lower()} by {status.fmt_clock(res.cutoff_at)} "
-                    f"(~{mins} min) to stay ≤ {pct:.0f}% at {status.fmt_clock(bedtime)}.",
+                    f"(~{mins} min) for better sleep at {status.fmt_clock(bedtime)}.",
                     self.icon, 8000,
                 )
                 self._sleep_notified[sid] = True
@@ -677,11 +702,6 @@ class MainWindow(QMainWindow):
                 self.sub_list.setCurrentItem(item)
         self.sub_list.blockSignals(False)
         self.refresh_all()
-
-    def _on_bedtime_changed(self):
-        t = self.bedtime.time()
-        self.controller.set_setting("ui_bedtime", f"{t.hour():02d}:{t.minute():02d}")
-        self._refresh_status()
 
     def _about(self):
         QMessageBox.information(

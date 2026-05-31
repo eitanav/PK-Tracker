@@ -25,6 +25,12 @@ def now_utc() -> datetime:
     return datetime.now(timezone.utc)
 
 
+# Research-grounded default ceilings for how much caffeine may still be in the
+# body at bedtime (mg), by self-reported sleep sensitivity. Derived from dose/
+# timing sleep studies (see the Settings "Sleep cutoff" help text).
+SLEEP_SENSITIVITY_MG = {"sensitive": 25.0, "average": 50.0, "resistant": 100.0}
+
+
 class AppController:
     def __init__(self, db: Database):
         self.db = db
@@ -71,11 +77,27 @@ class AppController:
     def redose_info(self, substance_id: str, now: datetime | None = None):
         return scheduler.redose_info(self.timeline(substance_id), now or now_utc())
 
-    def sleep_cutoff(self, substance_id, bedtime, amount=None, now=None, target_fraction=None):
-        return scheduler.sleep_cutoff(
-            self.timeline(substance_id), now or now_utc(), bedtime,
-            amount=amount, target_fraction=target_fraction,
-        )
+    def sleep_cutoff(self, substance_id, bedtime, *, mode="mg", target_mg=50.0,
+                     hours=8.0, amount=None, now=None):
+        """Latest sensible dose time before ``bedtime``.
+
+        ``mode`` selects the mental model:
+          * ``"mg"`` / ``"preset"`` — keep caffeine in the body at bedtime at or
+            below ``target_mg`` mg (dose-aware; accounts for what's already logged).
+          * ``"hours"`` — a flat "stop ``hours`` before bed" rule.
+        """
+        tl = self.timeline(substance_id)
+        now = now or now_utc()
+        if mode == "hours":
+            return scheduler.sleep_cutoff_hours(tl, now, bedtime, hours=hours, amount=amount)
+        v = self.substances[substance_id].volume_liters(self.profile.body_mass_kg)
+        abs_conc = (target_mg / v) if v else None      # mg in body -> mg/L ceiling
+        return scheduler.sleep_cutoff(tl, now, bedtime, amount=amount, absolute_target=abs_conc)
+
+    def concentration_to_mg(self, substance_id, conc) -> float:
+        """Convert a model concentration to mg in the body, for display."""
+        v = self.substances[substance_id].volume_liters(self.profile.body_mass_kg)
+        return float(conc) * (v or 0.0)
 
     def overload_info(self, substance_id, now=None):
         return scheduler.overload_info(self.timeline(substance_id), now or now_utc())

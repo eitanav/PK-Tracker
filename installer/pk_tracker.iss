@@ -9,7 +9,7 @@
 
 #define MyAppName "PK Tracker"
 #ifndef MyAppVersion
-  #define MyAppVersion "1.2.2"
+  #define MyAppVersion "1.3.0"
 #endif
 #define MyAppPublisher "PK Tracker"
 #define MyAppExeName "PKTracker.exe"

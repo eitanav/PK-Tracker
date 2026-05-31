@@ -173,6 +173,31 @@ def sleep_cutoff(
     return SleepCutoff(True, _hours_to_dt(cutoff_h), bedtime, ceiling, existing_at_bed, amount)
 
 
+def sleep_cutoff_hours(
+    timeline: SubstanceTimeline,
+    now: datetime,
+    bedtime: datetime,
+    hours: float,
+    amount: float | None = None,
+) -> SleepCutoff:
+    """Flat "stop caffeine N hours before bed" rule — no dose-aware solving.
+
+    A simple alternative to the mg-target model for users who prefer a fixed
+    rule. Feasible while the cutoff time is still in the future.
+    """
+    sub = timeline.substance
+    if amount is None:
+        last = timeline.last_dose()
+        amount = last.amount if last else (sub.presets[0].amount if sub.presets else 90.0)
+    cutoff = bedtime - timedelta(hours=hours)
+    if cutoff <= now:
+        return SleepCutoff(
+            False, None, bedtime, 0.0, 0.0, amount,
+            "already inside the pre-bed window",
+        )
+    return SleepCutoff(True, cutoff, bedtime, 0.0, 0.0, amount)
+
+
 # --------------------------------------------------------------------------- #
 # Overload / jitter-zone cue (caffeine)
 # --------------------------------------------------------------------------- #

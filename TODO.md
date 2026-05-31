@@ -16,16 +16,11 @@ Legend: 🔥 high impact · 🧪 needs validation/research · 🩹 fixes current
 
 ---
 
-## Sleep & timing (active redesign)
+## Sleep & timing
 
-1. 🔥🩹 **Rework the sleep-cutoff control.** Replace "Target by bed = X % of peak"
-   (unintuitive — % of a single dose's peak, and caffeine's ~5 h half-life makes
-   even 15 % fall ~13 h before bed) with one of: *(a)* caffeine left at bedtime in
-   **mg**, *(b)* a **sensitivity preset** (sensitive / average / resistant), or
-   *(c)* a flat **hours-before-bed** cutoff. Decision pending.
-2. 🔥 **"Latest coffee: HH:MM" headline.** Whatever the model, show the answer as
-   one obvious time plus a plain-English reason ("a coffee after 14:30 would still
-   leave >50 mg in you at 23:00").
+1. ✅ **Reworked the sleep-cutoff control** (done, 1.3.0): mg-by-bedtime default,
+   sensitivity preset, or hours-before-bed — chosen in Settings, with a
+   **"☕ Latest caffeine: HH:MM"** headline and research-grounded copy.
 3. 🧪 **Learned personal curfew.** Each morning log sleep quality (1–5); correlate
    with the prior day's caffeine timing/amount and surface *your* real cutoff.
 4. 🌱 **Per-day bedtimes** (weekday vs weekend), optionally auto-detected.

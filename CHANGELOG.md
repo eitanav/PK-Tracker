@@ -12,13 +12,25 @@ and the project aims to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### To be decided
-- **Sleep-cutoff redesign.** The current "Target by bed = X % of peak" control is
-  unintuitive (the percentage refers to a single dose's own peak blood level, and
-  caffeine's ~5 h half-life makes even 15 % land ~13 h before bed). Reworking it
-  around an intuitive mental model — caffeine left at bedtime in mg, a sensitivity
-  preset, or a plain hours-before-bed cutoff — plus a prominent "Latest coffee:
-  HH:MM" readout. Direction pending user input. See `TODO.md` §Sleep & timing.
+Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
+
+## [1.3.0] - 2026-05-31
+
+### Changed
+- **Reworked the sleep cutoff around an intuitive, research-grounded model.** The
+  old "Target by bed = X % of peak" control was confusing (the percentage referred
+  to a single dose's own peak, and caffeine's ~5 h half-life made even 15 % land
+  ~13 h before bed). It's replaced by a **"☕ Latest caffeine: HH:MM"** headline on
+  the dashboard plus a method you choose in **Settings → Sleep cutoff**:
+  - **Caffeine left at bedtime (mg)** — the default; keep caffeine in the body at
+    bedtime at or below a target (~50 mg), dose-aware so it accounts for what
+    you've already logged.
+  - **Sensitivity preset** — Very sensitive / Average / Caffeine-resistant, mapped
+    to ~25 / ~50 / ~100 mg.
+  - **Hours before bed** — a flat "stop N hours before bed" rule.
+  Defaults and the in-app explanation are grounded in caffeine/sleep dose-timing
+  research (Drake 2013; SLEEP 2025), with a "not medical advice" note. Bedtime and
+  method now live in Settings; the dashboard shows the answer.
 
 ## [1.2.2] - 2026-05-31
 

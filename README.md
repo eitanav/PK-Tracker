@@ -100,9 +100,11 @@ database lives at `~/.pk_tracker/pk_tracker.sqlite`.
 4. **Status panel** (right) — current effect/level, time since last dose,
    projected peak, and (caffeine) amount in body vs the jitter threshold.
 5. **Caffeine** also gets a **redose nudge** (effect below ~30%) and a **sleep
-   cutoff**: set a bedtime and a **target** (≤ X% of a dose's peak still in your
-   blood at bedtime) to see the latest safe coffee time — and get a tray nudge
-   ~30 min before it, so you know when to stop in advance.
+   cutoff** showing **"Latest caffeine: HH:MM"**. Configure it in *Settings →
+   Sleep cutoff*: set a bedtime and pick a method — caffeine left in the body at
+   bedtime in **mg** (default ~50 mg, research-grounded; accounts for what you've
+   already had), a **sensitivity preset**, or a flat **hours-before-bed** rule.
+   A tray nudge fires ~30 min before the cutoff so you know when to stop.
 6. **Alcohol** — pick *Alcohol*, then **tap a drink** (Beer / Wine / Spirits /
    Pint) to log it; the custom box takes grams of pure ethanol (≈14 g per
    standard drink). It shows BAC and estimated times to drop below the driving
@@ -222,6 +224,11 @@ correctly accumulate less than the naive sum of two peaks.
 ### Sleep cutoff (caffeine)
 
 Latest time you can take a dose and still have it decay below a bedtime ceiling.
+The ceiling is set by the user's chosen method: a target **mass in the body** at
+bedtime (mg, the default — converted to a concentration via the distribution
+volume `C_target = mg_target / V`), a **sensitivity preset** that maps to such a
+target (~25 / ~50 / ~100 mg), or a flat **hours-before-bed** rule (no solving).
+
 For a single decaying contribution the elimination phase inverts to:
 
 ```
@@ -230,7 +237,8 @@ t_allowed = (1/ke) · ln( C_current / C_target )
 
 For the general case (existing doses still on board), the cutoff is found by
 root-finding against the superposed curve, requiring the candidate dose to have
-peaked at least one `Tmax` before bedtime.
+peaked at least one `Tmax` before bedtime. Defaults are grounded in caffeine/
+sleep dose-timing research (Drake 2013; SLEEP 2025); they are not medical advice.
 
 ---
 
