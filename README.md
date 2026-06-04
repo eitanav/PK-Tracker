@@ -363,3 +363,9 @@ profiles beyond two pulses.
 Explicit non-goals: no webcam/screen capture or continuous sensing; no
 background compute loop; no cloud sync, accounts, or network calls; no redose or
 "consume more" prompts for alcohol or prescription medicines; no mobile build.
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
+
+PK Tracker is not a medical device and does not provide medical advice. See [DISCLAIMER.md](DISCLAIMER.md).
