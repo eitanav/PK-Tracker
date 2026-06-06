@@ -1,8 +1,9 @@
 """The floating widget: a small frameless always-on-top status panel.
 
-Shows the active substance's current effect at a glance, a thin live sparkline,
-a "+ dose" button, and the next suggested action. Draggable anywhere on its
-body; remembers its screen position between launches.
+Shows the active substance's current mass in the body (mg) at a glance, with the
+effect % as a secondary badge, a thin live sparkline, a "+ dose" button, and the
+next suggested action. Draggable anywhere on its body; remembers its screen
+position between launches.
 """
 
 from __future__ import annotations
@@ -176,21 +177,22 @@ class FloatingWidget(QWidget):
         self.name_label.setText(sub.name)
         readout = status.current_readout(self.controller, self.sid, now)
 
-        if readout["effect_pct"] is not None:
-            self.value_label.setText(f"{readout['effect_pct']:.0f}%")
-            self.badge.setText("effect")
+        # Primary metric is the concrete mass in the body (mg); effect % is the
+        # secondary badge. Alcohol (no body-mass concept) falls back to its level.
+        if readout["body_mg"] is not None:
+            self.value_label.setText(f"{readout['body_mg']:.0f} mg")
+            if readout["effect_pct"] is not None:
+                self.badge.setText(f"{readout['effect_pct']:.0f}% effect")
+            else:
+                self.badge.setText("in body")
         else:
             self.value_label.setText(f"{readout['conc_value']:.2f}")
             self.badge.setText(readout["conc_unit"])
         self.value_label.setStyleSheet(f"color: {accent};")
 
-        # Sparkline over a short forward window.
+        # Sparkline tracks the blood level (∝ mg in body), matching the headline.
         res = tl.curve(now - timedelta(hours=1), now + timedelta(hours=8), 220)
-        if res.effect is not None:
-            peak = tl.personal_peak_effect(now=now)
-            y = res.effect / peak * 100 if peak > 0 else res.effect * 0
-        else:
-            y = res.concentration * sub.conc_scale
+        y = res.concentration * sub.conc_scale
         self.spark.set_now(now.timestamp())
         self.spark.update_trace(res.x, np.asarray(y), accent)
 

@@ -97,8 +97,8 @@ database lives at `~/.pk_tracker/pk_tracker.sqlite`.
    axis); the dashed blue line is the **effect** as a percent of your recent
    peak (right axis). Solid = past, dashed = projection, with a **now** marker.
    Use **Window** to change the span and **Overlay all** to compare substances.
-4. **Status panel** (right) — current effect/level, time since last dose,
-   projected peak, and (caffeine) amount in body vs the jitter threshold.
+4. **Status panel** (right) — leads with the **amount in the body (mg)**; then
+   blood level, time since last dose, projected peak, and effect % (secondary).
 5. **Caffeine** also gets a **redose nudge** (effect below ~30%) and a **sleep
    cutoff** showing **"Latest caffeine: HH:MM"**. Configure it in *Settings →
    Sleep cutoff*: set a bedtime and pick a method — caffeine left in the body at

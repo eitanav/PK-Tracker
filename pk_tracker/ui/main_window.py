@@ -261,7 +261,7 @@ class MainWindow(QMainWindow):
         grid.setHorizontalSpacing(10)
         grid.setVerticalSpacing(4)
         self.readout_labels = {}
-        for r, key in enumerate(["Blood level", "Since last", "Projected peak", "In body"]):
+        for r, key in enumerate(["Blood level", "Since last", "Projected peak", "Effect"]):
             cap = QLabel(key)
             cap.setObjectName("Muted")
             val = QLabel("—")
@@ -516,15 +516,19 @@ class MainWindow(QMainWindow):
         self.status_name.setStyleSheet(f"color: {sub.color};")
 
         r = status.current_readout(self.controller, self.active_sid, now)
-        if r["effect_pct"] is not None:
-            self.big_value.setText(f"{r['effect_pct']:.0f}%")
-            self.big_caption.setText("effect · % of recent peak")
+        over = self.controller.overload_info(self.active_sid, now)
+        # Primary metric: concrete mass in the body (mg). Effect % is secondary.
+        if r["body_mg"] is not None:
+            self.big_value.setText(f"{r['body_mg']:.0f} mg")
+            if over.has_threshold:
+                self.big_caption.setText(f"{sub.name.lower()} in body · jitter zone ~{over.threshold_mg:.0f} mg")
+            else:
+                self.big_caption.setText(f"{sub.name.lower()} in body")
         else:
             self.big_value.setText(f"{r['conc_value']:.3f}")
             self.big_caption.setText(f"current level · {r['conc_unit']}")
 
         accent = sub.color
-        over = self.controller.overload_info(self.active_sid, now)
         if over.over:
             accent = COLORS["warn"]
         self.big_value.setStyleSheet(f"color: {accent};")
@@ -532,10 +536,10 @@ class MainWindow(QMainWindow):
         self.readout_labels["Blood level"].setText(f"{r['conc_value']:.3f} {r['conc_unit']}")
         self.readout_labels["Since last"].setText(r["since_last"])
         self.readout_labels["Projected peak"].setText(r["peak_at"])
-        if over.has_threshold:
-            self.readout_labels["In body"].setText(f"{over.body_amount_mg:.0f} / {over.threshold_mg:.0f} mg")
+        if r["effect_pct"] is not None:
+            self.readout_labels["Effect"].setText(f"{r['effect_pct']:.0f}% of recent peak")
         else:
-            self.readout_labels["In body"].setText("—")
+            self.readout_labels["Effect"].setText("—")
 
         action = status.next_action(self.controller, self.active_sid, now)
         if action is None:

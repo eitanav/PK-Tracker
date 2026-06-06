@@ -59,6 +59,9 @@ def current_readout(controller, sid: str, now: datetime) -> dict:
         "since_last": "—",
         "peak_at": "—",
         "has_doses": bool(tl.doses),
+        # Caffeine/stimulant mass in the body (mg) — the primary, concrete metric.
+        # None for alcohol (Widmark) and any substance with no distribution volume.
+        "body_mg": None if (sub.is_alcohol or sub.v_l_per_kg is None) else float(tl.body_amount_at(now)),
     }
     pct = tl.effect_percent_of_peak(now, now=now)
     if pct is not None:

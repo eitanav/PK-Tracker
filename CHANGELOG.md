@@ -14,6 +14,15 @@ and the project aims to follow [Semantic Versioning](https://semver.org/).
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
 
+## [1.3.1] - 2026-05-31
+
+### Changed
+- **Caffeine in the body (mg) is now the primary metric; effect % is secondary.**
+  The floating widget leads with e.g. **"88 mg"** and shows effect % as a small
+  badge; the status panel's big number is the mg in body (with the jitter-zone
+  ceiling), and effect % moves to a secondary row. The widget sparkline now tracks
+  blood level (∝ mg) to match the headline.
+
 ## [1.3.0] - 2026-05-31
 
 ### Changed
