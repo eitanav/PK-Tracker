@@ -14,6 +14,16 @@ and the project aims to follow [Semantic Versioning](https://semver.org/).
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
 
+## [1.4.0] - 2026-06-06
+
+### Added
+- **🎯 Perfect timing coach (caffeine).** Tell it a moment you need to be sharp
+  (workout, exam, meeting) and it computes **exactly when — and how much — to
+  drink** so caffeine peaks right then, with a live check against your sleep
+  cutoff (✓ safe / ⚠ past your curfew). Inverse pharmacokinetics: a single dose
+  peaks one Tmax after it's taken, so the optimal dose time is `target − Tmax`.
+  Shown as a panel in the status column for caffeine.
+
 ## [1.3.3] - 2026-06-06
 
 ### Fixed

@@ -199,6 +199,49 @@ def sleep_cutoff_hours(
 
 
 # --------------------------------------------------------------------------- #
+# Perfect-timing coach: when to dose so it peaks at a target moment
+# --------------------------------------------------------------------------- #
+@dataclass
+class PerfectTiming:
+    feasible: bool
+    dose_time: datetime | None          # when to take the dose
+    target_time: datetime               # when you want to be at your sharpest
+    amount: float
+    tmax_h: float                       # lead time (a dose peaks one Tmax later)
+    body_mg_at_target: float            # projected mass in body at the target
+    reason: str = ""
+
+
+def perfect_timing(
+    timeline: SubstanceTimeline,
+    now: datetime,
+    target_time: datetime,
+    amount: float,
+) -> PerfectTiming:
+    """When to take a dose of ``amount`` so it peaks right at ``target_time``.
+
+    A single dose peaks one Tmax after it's taken, so the optimal dose time is
+    simply ``target_time - Tmax``. Also reports the projected body load at the
+    target (already-logged doses + the new one) so the user sees the boost.
+    """
+    sub = timeline.substance
+    if sub.ka is None or sub.model == "widmark_zero_order":
+        return PerfectTiming(False, None, target_time, amount, 0.0, 0.0,
+                             "not applicable to this substance")
+    ke = sub.ke_value()
+    v = sub.volume_liters(timeline.profile.body_mass_kg)
+    tmax = models.tmax_single(sub.ka, ke)
+    dose_time = target_time - timedelta(hours=tmax)
+    existing = float(timeline.concentration_at(target_time))
+    new_peak = float(models.cmax_single(amount, sub.f, v, sub.ka, ke))
+    body_mg = (existing + new_peak) * v
+    if dose_time <= now:
+        return PerfectTiming(False, None, target_time, amount, tmax, body_mg,
+                             "that peak is too soon — drink now for the closest")
+    return PerfectTiming(True, dose_time, target_time, amount, tmax, body_mg)
+
+
+# --------------------------------------------------------------------------- #
 # Overload / jitter-zone cue (caffeine)
 # --------------------------------------------------------------------------- #
 @dataclass

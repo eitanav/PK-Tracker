@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from datetime import timedelta, timezone
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTime, QTimer
 from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QSpinBox,
     QSystemTrayIcon,
+    QTimeEdit,
     QVBoxLayout,
     QWidget,
 )
@@ -86,6 +87,7 @@ class MainWindow(QMainWindow):
         self.active_sid = subs[0].id if subs else None
         self._redose_notified: dict[str, bool] = {}
         self._sleep_notified: dict[str, bool] = {}
+        self._sleep_cutoff_at = None      # last computed coffee curfew, for the timing check
         self._quitting = False
 
         central = QWidget()
@@ -305,6 +307,39 @@ class MainWindow(QMainWindow):
         sv.addWidget(self.sleep_config)
         v.addWidget(self.sleep_panel)
 
+        # Perfect timing (caffeine): when to dose so it peaks at a target moment.
+        self.timing_panel = QWidget()
+        pv = QVBoxLayout(self.timing_panel)
+        pv.setContentsMargins(0, 0, 0, 0)
+        pv.addWidget(self._h2("🎯 Perfect timing"))
+        prow = QHBoxLayout()
+        prow.addWidget(QLabel("Be sharp at"))
+        self.timing_time = QTimeEdit()
+        self.timing_time.setDisplayFormat("HH:mm")
+        th, tm = (int(x) for x in self.controller.get_setting("ui_timing_target", "18:00").split(":"))
+        self.timing_time.setTime(QTime(th, tm))
+        self.timing_time.timeChanged.connect(self._on_timing_changed)
+        prow.addWidget(self.timing_time)
+        self.timing_mg = QSpinBox()
+        self.timing_mg.setRange(10, 400)
+        self.timing_mg.setSingleStep(10)
+        self.timing_mg.setSuffix(" mg")
+        self.timing_mg.setValue(int(float(self.controller.get_setting("ui_timing_mg", "90"))))
+        self.timing_mg.valueChanged.connect(self._on_timing_changed)
+        prow.addWidget(self.timing_mg)
+        prow.addStretch(1)
+        pv.addLayout(prow)
+        self.timing_headline = QLabel("—")
+        self.timing_headline.setObjectName("H2")
+        self.timing_headline.setStyleSheet(f"color: {COLORS['accent']};")
+        self.timing_headline.setWordWrap(True)
+        pv.addWidget(self.timing_headline)
+        self.timing_note = QLabel("")
+        self.timing_note.setObjectName("Muted")
+        self.timing_note.setWordWrap(True)
+        pv.addWidget(self.timing_note)
+        v.addWidget(self.timing_panel)
+
         # Alcohol clearance.
         self.alcohol_panel = QWidget()
         av = QVBoxLayout(self.alcohol_panel)
@@ -376,6 +411,7 @@ class MainWindow(QMainWindow):
         # substances (caffeine, opted-in custom stimulants) — never prescription
         # meds or alcohol, which get no dosing prompts.
         self.sleep_panel.setVisible(sub.redose_eligible)
+        self.timing_panel.setVisible(sub.redose_eligible)
         self.alcohol_panel.setVisible(sub.is_alcohol)
 
     # ----- dose logging ------------------------------------------------------
@@ -558,7 +594,8 @@ class MainWindow(QMainWindow):
             self.action_chip.setStyleSheet(f"color: {color};")
 
         if sub.redose_eligible:
-            self._refresh_sleep_cutoff(now)
+            self._refresh_sleep_cutoff(now)     # sets self._sleep_cutoff_at
+            self._refresh_timing(now)
         if sub.is_alcohol:
             self._refresh_alcohol(now)
 
@@ -586,8 +623,41 @@ class MainWindow(QMainWindow):
             self.active_sid, bedtime, mode=mode, target_mg=target_mg, hours=hours,
         )
         sub = self.controller.substance(self.active_sid)
+        self._sleep_cutoff_at = res.cutoff_at    # for the perfect-timing sleep check
         self._render_sleep(res, sub, mode, bedtime, target_mg, hours)
         self._check_sleep_alert(now, bedtime, res, sub)
+
+    def _refresh_timing(self, now):
+        tt = self.timing_time.time()
+        target = self._next_datetime_for(now, tt.hour(), tt.minute())
+        amount = float(self.timing_mg.value())
+        res = self.controller.perfect_timing(self.active_sid, target, amount, now=now)
+        clk = status.fmt_clock
+        if res.feasible and res.dose_time is not None:
+            lead = res.dose_time - now
+            self.timing_headline.setText(
+                f"☕ Drink {amount:.0f} mg at {clk(res.dose_time)}  ·  in {status.fmt_delta(lead.total_seconds())}"
+            )
+            note = f"Peaks right at {clk(target)} (~{res.body_mg_at_target:.0f} mg in body then)."
+            cutoff = self._sleep_cutoff_at
+            if cutoff is not None:
+                if res.dose_time <= cutoff:
+                    note += "  ✓ within your sleep cutoff."
+                else:
+                    note += f"  ⚠ after your {clk(cutoff)} curfew — may cost you sleep."
+            self.timing_note.setText(note)
+        else:
+            self.timing_headline.setText(f"☕ Drink {amount:.0f} mg now")
+            self.timing_note.setText(
+                f"{res.reason.capitalize()} — for a {clk(target)} peak you'd need to dose "
+                f"~{res.tmax_h*60:.0f} min ahead."
+            )
+
+    def _on_timing_changed(self):
+        t = self.timing_time.time()
+        self.controller.set_setting("ui_timing_target", f"{t.hour():02d}:{t.minute():02d}")
+        self.controller.set_setting("ui_timing_mg", str(self.timing_mg.value()))
+        self._refresh_status()
 
     def _render_sleep(self, res, sub, mode, bedtime, target_mg, hours):
         clk = status.fmt_clock

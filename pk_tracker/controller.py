@@ -102,6 +102,11 @@ class AppController:
     def overload_info(self, substance_id, now=None):
         return scheduler.overload_info(self.timeline(substance_id), now or now_utc())
 
+    def perfect_timing(self, substance_id, target_time, amount, now=None):
+        return scheduler.perfect_timing(
+            self.timeline(substance_id), now or now_utc(), target_time, amount,
+        )
+
     def alcohol_predictions(self, substance_id, now=None):
         return scheduler.alcohol_predictions(self.timeline(substance_id), now or now_utc())
 

@@ -105,6 +105,8 @@ database lives at `~/.pk_tracker/pk_tracker.sqlite`.
    bedtime in **mg** (default ~50 mg, research-grounded; accounts for what you've
    already had), a **sensitivity preset**, or a flat **hours-before-bed** rule.
    A tray nudge fires ~30 min before the cutoff so you know when to stop.
+   The **🎯 Perfect timing** panel does the inverse: pick a moment you need to be
+   sharp and it tells you exactly when (and how much) to drink to peak right then.
 6. **Alcohol** — pick *Alcohol*, then **tap a drink** (Beer / Wine / Spirits /
    Pint) to log it; the custom box takes grams of pure ethanol (≈14 g per
    standard drink). It shows BAC and estimated times to drop below the driving
