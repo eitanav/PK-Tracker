@@ -11,7 +11,8 @@ from __future__ import annotations
 from datetime import timedelta
 
 import numpy as np
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -139,9 +140,22 @@ class FloatingWidget(QWidget):
     def showEvent(self, e):
         super().showEvent(e)
         # The stays-on-bottom hint alone is unreliable on some Windows setups, so
-        # actively push the widget beneath other windows each time it appears.
-        if self.pinned:
+        # actively push the widget beneath other windows each time it appears —
+        # except when the user explicitly asked to see it via reveal().
+        if self.pinned and not getattr(self, "_suppress_lower", False):
             self.lower()
+
+    def reveal(self):
+        """Bring the widget somewhere the user can definitely see it: on a visible
+        screen and raised to the front, even in pinned (stays-on-bottom) mode.
+        Used by the dashboard button, tray toggle, and Settings."""
+        self._restore_position()          # re-clamps onto a connected screen
+        self._suppress_lower = True
+        self.show()
+        self._suppress_lower = False
+        self.raise_()
+        if not self.pinned:          # pinned widget refuses focus; raise_ is enough
+            self.activateWindow()
 
     # ----- state -------------------------------------------------------------
     def set_active_substance(self, sid: str):
@@ -242,11 +256,30 @@ class FloatingWidget(QWidget):
         if raw:
             try:
                 x, y = (int(v) for v in raw.split(","))
-                self.move(x, y)
+                self.move(self._on_screen_point(x, y))
                 return
             except ValueError:
                 pass
-        self.move(80, 80)
+        self.move(self._default_point())
+
+    def _default_point(self) -> QPoint:
+        ag = QGuiApplication.primaryScreen().availableGeometry()
+        return QPoint(ag.right() - (self.width() or 250) - 24, ag.top() + 60)
+
+    def _on_screen_point(self, x: int, y: int) -> QPoint:
+        """Keep the saved position visible: nudge it fully inside whatever screen
+        it lands on, or fall back to a default corner if it is off every screen
+        (e.g. a monitor that is no longer connected). This is what stops a stale
+        off-screen position from making the widget 'not open' at all."""
+        w, h = self.width() or 250, self.height() or 168
+        rect = QRect(x, y, w, h)
+        for s in QGuiApplication.screens():
+            ag = s.availableGeometry()
+            if ag.intersects(rect):
+                nx = min(max(x, ag.left()), ag.right() - w)
+                ny = min(max(y, ag.top()), ag.bottom() - h)
+                return QPoint(nx, ny)
+        return self._default_point()
 
     def closeEvent(self, e):
         self._save_position()

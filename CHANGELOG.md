@@ -14,6 +14,19 @@ and the project aims to follow [Semantic Versioning](https://semver.org/).
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
 
+## [1.3.3] - 2026-06-06
+
+### Fixed
+- **Widget appeared to "not open" when toggled.** A stale **off-screen saved
+  position** (e.g. from a monitor that is no longer connected) placed it where it
+  couldn't be seen, and in pinned mode it could open *behind* other windows. The
+  saved position is now clamped onto a connected screen, and showing the widget
+  brings it on-screen **and to the front** (`reveal()`), even in pinned mode.
+
+### Added
+- A **"Show floating widget" button on the dashboard**, so the widget can be
+  brought back without using the tray.
+
 ## [1.3.2] - 2026-06-06
 
 ### Fixed

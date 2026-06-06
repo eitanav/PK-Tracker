@@ -319,6 +319,7 @@ class MainWindow(QMainWindow):
         v.addStretch(1)
 
         for label, slot in [
+            ("Show floating widget", lambda: self.set_widget_visible(True)),
             ("Settings…", self._open_settings),
             ("Calibration…", self._open_calibration),
             ("New substance…", self._open_custom),
@@ -734,7 +735,7 @@ class MainWindow(QMainWindow):
 
     def set_widget_visible(self, visible: bool):
         if visible:
-            self.widget.show()
+            self.widget.reveal()        # on-screen + raised, even in pinned mode
             self.widget.refresh()
         else:
             self.widget.hide()
