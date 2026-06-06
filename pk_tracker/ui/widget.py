@@ -50,11 +50,11 @@ class FloatingWidget(QWidget):
         self.setAttribute(Qt.WA_TranslucentBackground)
         # Never steal focus from the user's active window when (re)shown.
         self.setAttribute(Qt.WA_ShowWithoutActivating)
-        self.setFixedSize(250, 168)
+        self.setFixedSize(250, 196)
 
         panel = QFrame(self)
         panel.setObjectName("Panel")
-        panel.setGeometry(0, 0, 250, 168)
+        panel.setGeometry(0, 0, 250, 196)
         root = QVBoxLayout(panel)
         root.setContentsMargins(14, 12, 14, 12)
         root.setSpacing(6)
@@ -81,6 +81,16 @@ class FloatingWidget(QWidget):
         self.value_label = QLabel("—")
         self.value_label.setFont(mono_font(30, 600))
         root.addWidget(self.value_label)
+
+        info = QHBoxLayout()
+        self.today_label = QLabel("")           # daily total vs guideline
+        self.today_label.setObjectName("Muted")
+        info.addWidget(self.today_label)
+        info.addStretch(1)
+        self.curfew_label = QLabel("")          # latest coffee for sleep
+        self.curfew_label.setObjectName("Muted")
+        info.addWidget(self.curfew_label)
+        root.addLayout(info)
 
         self.spark = Sparkline()
         self.spark.setFixedHeight(40)
@@ -206,6 +216,28 @@ class FloatingWidget(QWidget):
             self.value_label.setText(f"{readout['conc_value']:.2f}")
             self.badge.setText(readout["conc_unit"])
         self.value_label.setStyleSheet(f"color: {accent};")
+
+        # Daily total vs guideline (left) + latest-coffee curfew (right).
+        dm, gl = readout["daily_mg"], readout["daily_guideline"]
+        if dm and dm > 0:
+            self.today_label.setText(f"Today {dm:.0f}/{gl:.0f} mg" if gl else f"Today {dm:.0f} mg")
+            if gl and dm >= gl:
+                self.today_label.setStyleSheet(f"color: {COLORS['danger']};")
+            elif gl and dm >= 0.8 * gl:
+                self.today_label.setStyleSheet(f"color: {COLORS['warn']};")
+            else:
+                self.today_label.setStyleSheet("")
+        else:
+            self.today_label.setText("")
+            self.today_label.setStyleSheet("")
+
+        if sub.redose_eligible:
+            sc = self.controller.sleep_cutoff_from_settings(self.sid, now)
+            clk = status.fmt_clock
+            self.curfew_label.setText(f"☕ {clk(sc.cutoff_at)}" if (sc.feasible and sc.cutoff_at) else "☕ —")
+            self.curfew_label.setToolTip("Latest coffee to protect your sleep")
+        else:
+            self.curfew_label.setText("")
 
         # Sparkline tracks the blood level (∝ mg in body), matching the headline.
         res = tl.curve(now - timedelta(hours=1), now + timedelta(hours=8), 220)

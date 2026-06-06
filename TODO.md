@@ -29,7 +29,7 @@ Legend: 🔥 high impact · 🧪 needs validation/research · 🩹 fixes current
 
 ## Science & model accuracy
 
-7. 🔥🧪 **Personal caffeine half-life.** Let users set or estimate it — smoking
+7. ✅ **Personal caffeine half-life** (done, 1.5.0). Let users set or estimate it — smoking
    (~3–4 h), oral contraceptives/pregnancy (~10–15 h), and CYP1A2 genotype move it
    a lot. Today everyone shares the population average.
 8. 🧪 **Tolerance / habituation over weeks.** Chronic intake shifts the effect
@@ -46,21 +46,21 @@ Legend: 🔥 high impact · 🧪 needs validation/research · 🩹 fixes current
 
 ## Logging & data
 
-14. 🔥 **Undo last action** (dose add/edit/delete).
-15. 🔥 **Backup / export / import** (CSV + JSON) so data survives reinstalls and
-    moves between machines.
+14. ✅ **Undo last dose** (done, 1.5.0). Next: extend undo to edits/deletes too.
+15. ✅ **Export** dose log to CSV/JSON (done, 1.5.0). Import / restore-from-file
+    still open — for moving between machines.
 16. 🩹 **Faster predating.** A quick "had it N min/hours ago" stepper and a
     calendar/time picker for back-logging.
 17. 🌱 **Tags on doses** (work / gym / social) and history search/filter.
-18. 🌱 **Daily & weekly summaries:** total mg, peak, time over the daily ceiling,
-    curfew adherence.
+18. 🟡 **Summaries:** daily total vs the 400 mg guideline shipped (1.5.0); weekly
+    roll-ups (peak, time over ceiling, curfew adherence) still open.
 19. 🌱 **Gentle insights & streaks** ("under 400 mg five days running").
 20. 🌱🧪 **Optional encrypted cloud sync** across devices (off by default).
 
 ## Widget & UX
 
 21. 🔥 **Resizable widget** + compact/expanded presets.
-22. 🔥 **"Latest coffee" countdown** on the widget face.
+22. ✅ **"Latest coffee" on the widget** (done, 1.5.0).
 23. 🩹 **Edge/corner snapping** when dragging; remember per-monitor position.
 24. 🌱 **Opacity slider** and an idle click-through mode.
 25. 🌱 **Right-click context menu** on the widget (quick-log a preset, hide,

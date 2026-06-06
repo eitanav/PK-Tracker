@@ -189,6 +189,17 @@ class SettingsDialog(QDialog):
         prow.addStretch(1)
         root.addLayout(prow)
 
+        # --- Data ---
+        root.addWidget(self._h2("Data"))
+        exp = QPushButton("Export dose log…  (CSV / JSON)")
+        exp.clicked.connect(self.window._export_data)
+        root.addWidget(exp)
+        dhint = QLabel("Saves every logged dose to a file you choose — a backup, "
+                       "or for analysis in a spreadsheet.")
+        dhint.setObjectName("Muted")
+        dhint.setWordWrap(True)
+        root.addWidget(dhint)
+
         root.addStretch(1)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
@@ -269,6 +280,24 @@ class CalibrationDialog(QDialog):
         body.addRow("Alcohol absorption ramp", self.ramp)
         root.addLayout(body)
 
+        # Personal caffeine kinetics: the one PK knob worth personalising.
+        caf = controller.substances.get("caffeine")
+        if caf is not None:
+            hlf = QFormLayout()
+            self.caffeine_hl = QDoubleSpinBox()
+            self.caffeine_hl.setRange(1.5, 15.0)
+            self.caffeine_hl.setSingleStep(0.5)
+            self.caffeine_hl.setDecimals(1)
+            self.caffeine_hl.setSuffix(" h")
+            self.caffeine_hl.setValue(profile.half_life_for("caffeine") or caf.half_life_h)
+            self.caffeine_hl.setToolTip(
+                "Default ~5 h. Faster (~3-4 h) if you smoke; slower (~10 h) on oral "
+                "contraceptives or in pregnancy. Changes every caffeine curve and "
+                "your sleep cutoff."
+            )
+            hlf.addRow("Caffeine half-life", self.caffeine_hl)
+            root.addLayout(hlf)
+
         # Per-substance tolerance.
         root.addWidget(self._h2("Tolerance  (0.5 sensitive · 1.0 baseline · 1.5 habituated)"))
         self.tol_spins: dict[str, QDoubleSpinBox] = {}
@@ -332,6 +361,9 @@ class CalibrationDialog(QDialog):
             alcohol_ramp_min=self.ramp.value(),
         )
         profile.tolerance = {sid: spin.value() for sid, spin in self.tol_spins.items()}
+        profile.half_life_overrides = dict(self.controller.profile.half_life_overrides)
+        if hasattr(self, "caffeine_hl"):
+            profile.half_life_overrides["caffeine"] = self.caffeine_hl.value()
         self.controller.save_profile(profile)
         self.accept()
 

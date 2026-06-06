@@ -14,6 +14,23 @@ and the project aims to follow [Semantic Versioning](https://semver.org/).
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
 
+## [1.5.0] - 2026-06-06
+
+Five simple-but-significant improvements.
+
+### Added
+- **📊 Daily total vs guideline.** "Today: X / 400 mg" on the dashboard and the
+  widget, coloured as you approach (amber) or exceed (red) the FDA's ~400 mg/day
+  caffeine guideline — the "how much have I had today?" answer.
+- **↩ Undo last dose.** One click removes the most recently logged dose.
+- **⏱️ Personal caffeine half-life** (Calibration). Override the population ~5 h —
+  ~3-4 h if you smoke, ~10 h on oral contraceptives or in pregnancy. It
+  personalises every caffeine curve, the sleep cutoff, and perfect timing.
+- **💾 Export dose log** (CSV / JSON) from Settings → Data — a backup, or for
+  spreadsheet analysis.
+- **☕ "Latest coffee" on the widget.** The sleep-cutoff curfew time now shows on
+  the always-visible floating widget, not just the dashboard.
+
 ## [1.4.0] - 2026-06-06
 
 ### Added

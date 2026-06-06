@@ -66,6 +66,10 @@ class UserProfile:
     legal_bac_limit: float = DEFAULT_LEGAL_BAC_LIMIT
     alcohol_ramp_min: float = 0.0           # alcohol absorption ramp (min); 0 = instant
     tolerance: dict[str, float] = field(default_factory=dict)   # per substance id
+    # Per-user elimination half-life override (hours), per substance id. Caffeine
+    # clearance varies ~3x with smoking / oral contraceptives / genetics, so this
+    # personalises the *kinetics*. Empty = use the substance's population default.
+    half_life_overrides: dict[str, float] = field(default_factory=dict)
 
     def widmark_r(self) -> float:
         return self.r_female if str(self.sex).lower().startswith("f") else self.r_male
@@ -73,6 +77,11 @@ class UserProfile:
     def tolerance_for(self, substance_id: str) -> float:
         """Tolerance factor in [0.5, 1.5]; 1.0 if uncalibrated."""
         return float(self.tolerance.get(substance_id, 1.0))
+
+    def half_life_for(self, substance_id: str) -> float | None:
+        """User's override half-life (h) for a substance, or None to use default."""
+        v = self.half_life_overrides.get(substance_id)
+        return float(v) if v else None
 
 
 @dataclass
@@ -104,6 +113,13 @@ class SubstanceTimeline:
         self.tolerance_factor = profile.tolerance_for(substance.id)
 
     # ----- core evaluation ---------------------------------------------------
+    def ke(self) -> float:
+        """Elimination rate constant, honouring a per-user half-life override."""
+        override = self.profile.half_life_for(self.substance.id)
+        if override:
+            return models.ke_from_half_life(override)
+        return self.substance.ke_value()
+
     def _dose_events(self) -> list[tuple[float, float]]:
         return [(d.hours, d.amount) for d in self.doses]
 
@@ -122,7 +138,7 @@ class SubstanceTimeline:
                 ramp_h=self.profile.alcohol_ramp_min / 60.0,
             )
         v = sub.volume_liters(self.profile.body_mass_kg)
-        ke = sub.ke_value()
+        ke = self.ke()
         if sub.model == MODEL_ONE_COMPARTMENT_ER:
             return models.superpose_er(
                 t, events, f=sub.f, v=v, ka=sub.ka, ke=ke,

@@ -8,7 +8,7 @@ holds no simulation state: every call recomputes from the persisted dose log.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from .core import scheduler
 from .core.engine import Dose, SubstanceTimeline, UserProfile
@@ -68,6 +68,22 @@ class AppController:
     def delete_dose(self, dose_id: int) -> None:
         self.db.delete_dose(dose_id)
 
+    def undo_last_dose(self, substance_id: str | None = None):
+        """Delete the most recently logged dose (highest id) and return it."""
+        doses = self.db.list_doses(substance_id)
+        if not doses:
+            return None
+        last = max(doses, key=lambda d: d.id or 0)
+        self.db.delete_dose(last.id)
+        return last
+
+    def daily_total_mg(self, substance_id: str, now: datetime | None = None) -> float:
+        """Sum of doses logged since local midnight today (mg)."""
+        now = now or now_utc()
+        local_midnight = now.astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
+        doses = self.db.list_doses(substance_id, since=local_midnight.astimezone(timezone.utc))
+        return float(sum(d.amount for d in doses))
+
     # ----- timelines + derived info -----------------------------------------
     def timeline(self, substance_id: str, doses: list[Dose] | None = None) -> SubstanceTimeline:
         if doses is None:
@@ -93,6 +109,29 @@ class AppController:
         v = self.substances[substance_id].volume_liters(self.profile.body_mass_kg)
         abs_conc = (target_mg / v) if v else None      # mg in body -> mg/L ceiling
         return scheduler.sleep_cutoff(tl, now, bedtime, amount=amount, absolute_target=abs_conc)
+
+    def _next_local_time(self, now: datetime, hour: int, minute: int) -> datetime:
+        local = now.astimezone()
+        cand = local.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if cand <= local:
+            cand += timedelta(days=1)
+        return cand.astimezone(timezone.utc)
+
+    def sleep_cutoff_from_settings(self, substance_id, now=None):
+        """Compute the sleep cutoff from the saved UI settings (shared by the
+        dashboard and the floating widget so both show the same 'latest coffee')."""
+        now = now or now_utc()
+        mode = self.get_setting("ui_sleep_mode", "mg")
+        hh, mm = (int(x) for x in self.get_setting("ui_bedtime", "23:00").split(":"))
+        hours = float(self.get_setting("ui_sleep_hours", "8"))
+        if mode == "preset":
+            sens = self.get_setting("ui_sleep_sensitivity", "average")
+            target_mg = SLEEP_SENSITIVITY_MG.get(sens, 50.0)
+        else:
+            target_mg = float(self.get_setting("ui_sleep_mg", "50"))
+        bedtime = self._next_local_time(now, hh, mm)
+        return self.sleep_cutoff(substance_id, bedtime, mode=mode, target_mg=target_mg,
+                                 hours=hours, now=now)
 
     def concentration_to_mg(self, substance_id, conc) -> float:
         """Convert a model concentration to mg in the body, for display."""

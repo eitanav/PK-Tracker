@@ -15,6 +15,10 @@ import numpy as np
 from ..core import scheduler
 from .theme import COLORS
 
+# Sensible daily-intake guideline (mg) for the "today" readout. Caffeine: the
+# FDA's ~400 mg/day for healthy adults. None = show the total without a ceiling.
+DAILY_GUIDELINE_MG = {"caffeine": 400.0}
+
 
 def _forward_peak(tl, now: datetime, hours: float = 16.0) -> datetime | None:
     """Time of the next concentration maximum ahead of ``now``, if it is still
@@ -62,6 +66,8 @@ def current_readout(controller, sid: str, now: datetime) -> dict:
         # Caffeine/stimulant mass in the body (mg) — the primary, concrete metric.
         # None for alcohol (Widmark) and any substance with no distribution volume.
         "body_mg": None if (sub.is_alcohol or sub.v_l_per_kg is None) else float(tl.body_amount_at(now)),
+        "daily_mg": controller.daily_total_mg(sid, now),
+        "daily_guideline": DAILY_GUIDELINE_MG.get(sid),
     }
     pct = tl.effect_percent_of_peak(now, now=now)
     if pct is not None:

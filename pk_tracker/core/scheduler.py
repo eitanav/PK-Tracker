@@ -121,7 +121,7 @@ def sleep_cutoff(
         last = timeline.last_dose()
         amount = last.amount if last else (sub.presets[0].amount if sub.presets else 90.0)
 
-    ke = sub.ke_value()
+    ke = timeline.ke()      # honours the per-user half-life override
     v = sub.volume_liters(timeline.profile.body_mass_kg)
     tmax = models.tmax_single(sub.ka, ke)
     cmax = models.cmax_single(amount, sub.f, v, sub.ka, ke)
@@ -228,7 +228,7 @@ def perfect_timing(
     if sub.ka is None or sub.model == "widmark_zero_order":
         return PerfectTiming(False, None, target_time, amount, 0.0, 0.0,
                              "not applicable to this substance")
-    ke = sub.ke_value()
+    ke = timeline.ke()      # honours the per-user half-life override
     v = sub.volume_liters(timeline.profile.body_mass_kg)
     tmax = models.tmax_single(sub.ka, ke)
     dose_time = target_time - timedelta(hours=tmax)

@@ -195,8 +195,12 @@ class MainWindow(QMainWindow):
         edit_btn.clicked.connect(self._edit_selected_dose)
         del_btn = QPushButton("Delete")
         del_btn.clicked.connect(self._delete_selected_dose)
+        undo_btn = QPushButton("↩ Undo last")
+        undo_btn.setToolTip("Remove the most recently logged dose")
+        undo_btn.clicked.connect(self._undo_last_dose)
         hrow.addWidget(edit_btn)
         hrow.addWidget(del_btn)
+        hrow.addWidget(undo_btn)
         v.addLayout(hrow)
         return panel
 
@@ -269,7 +273,7 @@ class MainWindow(QMainWindow):
         grid.setHorizontalSpacing(10)
         grid.setVerticalSpacing(4)
         self.readout_labels = {}
-        for r, key in enumerate(["Blood level", "Since last", "Projected peak", "Effect"]):
+        for r, key in enumerate(["Blood level", "Since last", "Projected peak", "Effect", "Today"]):
             cap = QLabel(key)
             cap.setObjectName("Muted")
             val = QLabel("—")
@@ -478,6 +482,43 @@ class MainWindow(QMainWindow):
         self.controller.delete_dose(dose.id)
         self.refresh_all()
 
+    def _undo_last_dose(self):
+        dose = self.controller.undo_last_dose(self.active_sid)
+        if dose is None:
+            self.log_feedback.setText("Nothing to undo.")
+        else:
+            sub = self.controller.substance(self.active_sid)
+            self.log_feedback.setText(f"↩ Removed {dose.amount:g} {dose.unit} {sub.name.lower()}")
+            self.refresh_all()
+        self._feedback_timer.start(4000)
+
+    def _export_data(self):
+        from PySide6.QtWidgets import QFileDialog
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Export dose log", "pk_tracker_doses.csv",
+            "CSV (*.csv);;JSON (*.json)",
+        )
+        if not path:
+            return
+        doses = self.controller.db.list_doses()
+        if path.lower().endswith(".json"):
+            import json
+            payload = [
+                {"substance": d.substance_id, "amount": d.amount, "unit": d.unit,
+                 "taken_at": d.taken_at.isoformat(), "note": d.note}
+                for d in doses
+            ]
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+        else:
+            import csv
+            with open(path, "w", newline="", encoding="utf-8") as f:
+                w = csv.writer(f)
+                w.writerow(["substance", "amount", "unit", "taken_at", "note"])
+                for d in doses:
+                    w.writerow([d.substance_id, d.amount, d.unit, d.taken_at.isoformat(), d.note])
+        self.tray.showMessage("Export complete", f"Saved {len(doses)} doses to {path}", self.icon, 5000)
+
     # ----- refresh / draw ----------------------------------------------------
     def refresh_all(self):
         self._refresh_history()
@@ -583,6 +624,20 @@ class MainWindow(QMainWindow):
             self.readout_labels["Effect"].setText(f"{r['effect_pct']:.0f}% of recent peak")
         else:
             self.readout_labels["Effect"].setText("—")
+
+        dm, gl = r["daily_mg"], r["daily_guideline"]
+        today = self.readout_labels["Today"]
+        if dm and dm > 0:
+            today.setText(f"{dm:.0f} / {gl:.0f} mg" if gl else f"{dm:.0f} mg")
+            col = ""
+            if gl and dm >= gl:
+                col = COLORS["danger"]
+            elif gl and dm >= 0.8 * gl:
+                col = COLORS["warn"]
+            today.setStyleSheet(f"color: {col};" if col else "")
+        else:
+            today.setText("—")
+            today.setStyleSheet("")
 
         action = status.next_action(self.controller, self.active_sid, now)
         if action is None:

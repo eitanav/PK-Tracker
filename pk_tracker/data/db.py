@@ -48,6 +48,7 @@ _PROFILE_SCALARS = {
     "alcohol_ramp_min": float,
 }
 _TOLERANCE_PREFIX = "tolerance_"
+_HALFLIFE_PREFIX = "halflife_"
 
 
 def default_db_path() -> Path:
@@ -272,13 +273,17 @@ class Database:
         rows = self.conn.execute("SELECT key, value FROM user_profile").fetchall()
         profile = UserProfile()
         tolerance: dict[str, float] = {}
+        half_lives: dict[str, float] = {}
         for r in rows:
             key, raw = r["key"], r["value"]
             if key in _PROFILE_SCALARS:
                 setattr(profile, key, _PROFILE_SCALARS[key](raw))
             elif key.startswith(_TOLERANCE_PREFIX):
                 tolerance[key[len(_TOLERANCE_PREFIX):]] = float(raw)
+            elif key.startswith(_HALFLIFE_PREFIX):
+                half_lives[key[len(_HALFLIFE_PREFIX):]] = float(raw)
         profile.tolerance = tolerance
+        profile.half_life_overrides = half_lives
         return profile
 
     def save_profile(self, profile: UserProfile) -> None:
@@ -286,6 +291,8 @@ class Database:
             self.set_profile_value(key, getattr(profile, key))
         for sub_id, factor in profile.tolerance.items():
             self.set_profile_value(f"{_TOLERANCE_PREFIX}{sub_id}", factor)
+        for sub_id, hl in profile.half_life_overrides.items():
+            self.set_profile_value(f"{_HALFLIFE_PREFIX}{sub_id}", hl)
 
     # ----- generic settings (UI prefs: widget position, bedtime, ...) --------
     # These live in the same key/value table; get_profile ignores unknown keys.
