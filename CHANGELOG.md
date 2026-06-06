@@ -14,6 +14,19 @@ and the project aims to follow [Semantic Versioning](https://semver.org/).
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
 
+## [1.3.2] - 2026-06-06
+
+### Fixed
+- **Floating widget could fail to open at all after an upgrade.** The ✕ button
+  used to persist a "hidden" flag (`ui_widget_visible="0"`), and because user data
+  in `~/.pk_tracker` survives reinstalls, the widget stayed hidden on every new
+  install with no obvious way back. Now:
+  - the ✕ button **dismisses the widget for the session only** — it reopens on the
+    next launch, and shows a one-time tray hint pointing to the tray/Settings;
+  - the persistent show/hide moved to a new `ui_widget_enabled` key (default on),
+    so the stale hidden state is ignored and the widget **returns automatically**
+    on upgrade. Turning it off for good still lives in Settings and the tray menu.
+
 ## [1.3.1] - 2026-05-31
 
 ### Changed

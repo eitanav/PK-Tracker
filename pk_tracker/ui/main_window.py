@@ -98,7 +98,10 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._build_right(), 0)
 
         # Floating widget + tray.
-        self.widget = FloatingWidget(controller, self.active_sid, on_change=self.refresh_all)
+        self.widget = FloatingWidget(
+            controller, self.active_sid,
+            on_change=self.refresh_all, on_close=self._on_widget_hidden,
+        )
         self.tray = AppTray(
             self.icon, on_show=self.show_dashboard,
             on_toggle_widget=self.toggle_widget, on_toggle_pin=self.toggle_widget_pin,
@@ -112,7 +115,10 @@ class MainWindow(QMainWindow):
 
         # Show the floating widget automatically unless the user hid it last time
         # (default on, so it appears on first run instead of having to be summoned).
-        if self.controller.get_setting("ui_widget_visible", "1") == "1":
+        # ui_widget_enabled (new key, default on) is the persistent show/hide. The
+        # old ui_widget_visible key is intentionally not read: the ✕ button used to
+        # write it to "0", which could leave the widget stuck hidden across upgrades.
+        if self.controller.get_setting("ui_widget_enabled", "1") == "1":
             self.widget.show()
             self.widget.refresh()
 
@@ -732,10 +738,20 @@ class MainWindow(QMainWindow):
             self.widget.refresh()
         else:
             self.widget.hide()
-        self.controller.set_setting("ui_widget_visible", "1" if visible else "0")
+        self.controller.set_setting("ui_widget_enabled", "1" if visible else "0")
 
     def toggle_widget(self):
         self.set_widget_visible(not self.widget.isVisible())
+
+    def _on_widget_hidden(self):
+        """The widget's ✕ dismisses it for the session (it reopens next launch).
+        Nudge once so people know where to bring it back or turn it off for good."""
+        self.tray.showMessage(
+            "Widget hidden for now",
+            "It'll be back next time you open PK Tracker. Bring it back now from the "
+            "tray menu (Toggle widget), or turn it off for good in Settings.",
+            self.icon, 6000,
+        )
 
     def set_widget_pinned(self, pinned: bool):
         self.widget.set_pinned(pinned)

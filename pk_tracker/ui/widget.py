@@ -33,11 +33,12 @@ _CLOSE_BTN_KEY = "ui_widget_close_btn"
 
 
 class FloatingWidget(QWidget):
-    def __init__(self, controller, sid: str, on_change=None):
+    def __init__(self, controller, sid: str, on_change=None, on_close=None):
         super().__init__(None)
         self.controller = controller
         self.sid = sid
         self.on_change = on_change or (lambda: None)
+        self._on_close_cb = on_close or (lambda: None)
         self._drag_offset: QPoint | None = None
 
         # "Pinned to desktop" sits the widget at the desktop level (behind other
@@ -103,10 +104,12 @@ class FloatingWidget(QWidget):
 
     # ----- close button ------------------------------------------------------
     def _on_close(self):
-        """Hide the widget and remember it, so it stays hidden next launch."""
+        """Dismiss the widget for now. It reopens next launch; to turn it off for
+        good, use Settings or the tray. (Session-only so the ✕ can never 'lose'
+        the widget permanently in a way that's hard to undo.)"""
         self._save_position()
         self.hide()
-        self.controller.set_setting("ui_widget_visible", "0")
+        self._on_close_cb()
 
     def set_close_button_visible(self, visible: bool):
         self.close_btn.setVisible(visible)
