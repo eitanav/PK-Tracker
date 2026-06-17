@@ -17,9 +17,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version tag for the release (e.g. v1.6.0)"
+        description: "Override release tag (blank = use pk_tracker.__version__)"
         required: false
-        default: "v1.6.0"
+        default: ""
   push:
     branches:
       - main
@@ -46,6 +46,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
+      - name: Resolve release tag from the app version
+        id: version
+        shell: bash
+        run: |
+          # Single source of truth: the release tag follows pk_tracker.__version__
+          # (e.g. 1.6.1 -> v1.6.1) unless a manual run overrides it. Keeps the app,
+          # installer, changelog, and GitHub release on the same version.
+          override="${{ github.event.inputs.version }}"
+          if [ -n "$override" ]; then
+            echo "tag=$override" >> "$GITHUB_OUTPUT"
+          else
+            v=$(python -c "import pk_tracker; print(pk_tracker.__version__)")
+            echo "tag=v$v" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install dependencies
         run: |
@@ -80,8 +95,8 @@ jobs:
       - name: Publish the Release (creates the tag server-side)
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version || 'v1.6.0' }}
-          name: PK Tracker ${{ github.event.inputs.version || 'v1.6.0' }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: PK Tracker ${{ steps.version.outputs.tag }}
           body: |
             ## Download & install — no command line needed
 

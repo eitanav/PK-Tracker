@@ -5,13 +5,28 @@ All notable changes to **PK Tracker** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project aims to follow [Semantic Versioning](https://semver.org/).
 
-> **Release policy.** App, installer, changelog, and GitHub release tags should
-> use the same semantic version. The next Windows release should be tagged
-> `v1.6.0`; `releases/latest` remains only the stable download URL.
+> **Release policy.** App, installer, changelog, and GitHub release tags share one
+> semantic version. The CI workflow derives the release tag straight from
+> `pk_tracker.__version__` (e.g. `1.6.1` → `v1.6.1`) on every push to `main`, so a
+> single version bump publishes a correctly-tagged release. `releases/latest`
+> stays the stable download URL.
 
 ## [Unreleased]
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
+
+## [1.6.1] - 2026-06-17
+
+### Changed
+- **Consistent release versioning.** The Windows build workflow now derives the
+  GitHub release tag from `pk_tracker.__version__` instead of a hard-coded value,
+  so bumping the version in one place publishes the matching `vX.Y.Z` release.
+  (Fixes the "app says one version, GitHub says another" mismatch for good.)
+
+### Verified
+- Reviewed and validated the 1.6.0 timeline/UX work: Y-normalised graph with
+  time-axis-only dragging, zoom-aware time labels, the on-graph hover readout, and
+  the coloured what-if dose simulation — all exercised headless and passing.
 
 ## [1.6.0] - 2026-06-17
 
