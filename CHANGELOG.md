@@ -5,14 +5,31 @@ All notable changes to **PK Tracker** are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project aims to follow [Semantic Versioning](https://semver.org/).
 
-> **Note on releases.** Windows binaries are currently published to a single
-> rolling GitHub release tagged `v1.0.0` (the "latest" download channel), while
-> the *app* version below tracks the real feature history. Aligning the two —
-> one GitHub release per version — is tracked in [`TODO.md`](TODO.md).
+> **Release policy.** App, installer, changelog, and GitHub release tags should
+> use the same semantic version. The next Windows release should be tagged
+> `v1.6.0`; `releases/latest` remains only the stable download URL.
 
 ## [Unreleased]
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
+
+## [1.6.0] - 2026-06-17
+
+### Added
+- **Interactive timeline polish.** The main graph now locks mouse dragging to the
+  time axis, normalizes Y ranges on redraw, shows denser zoom-aware time labels,
+  and displays an on-graph hover readout with exact local time, level, and effect.
+- **Dose simulation overlay.** Caffeine-like substances can preview a hypothetical
+  future dose on the graph in a different colour before it is logged.
+
+### Changed
+- Dashboard controls were simplified: Calibration, New substance, and About live
+  in Settings; the dashboard keeps a compact widget show/hide toggle.
+- The custom "minutes ago" dose field now steps in 15-minute increments while
+  still accepting typed values.
+- Version metadata is aligned at **1.6.0** across package metadata, installer, and
+  changelog.
+
 
 ## [1.5.0] - 2026-06-06
 
@@ -176,5 +193,15 @@ First complete, packaged release.
 - **Documentation**: README covering the science, math, constants, sources and
   scope limits, plus a Hebrew usage guide (`README.he.md`).
 
-[Unreleased]: https://github.com/eitanav/coffe-thing/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/eitanav/coffe-thing/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/eitanav/coffe-thing/compare/v1.5.0...v1.6.0
+[1.5.0]: https://github.com/eitanav/coffe-thing/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/eitanav/coffe-thing/compare/v1.3.3...v1.4.0
+[1.3.3]: https://github.com/eitanav/coffe-thing/compare/v1.3.2...v1.3.3
+[1.3.2]: https://github.com/eitanav/coffe-thing/compare/v1.3.1...v1.3.2
+[1.3.1]: https://github.com/eitanav/coffe-thing/compare/v1.3.0...v1.3.1
+[1.3.0]: https://github.com/eitanav/coffe-thing/compare/v1.2.2...v1.3.0
+[1.2.2]: https://github.com/eitanav/coffe-thing/compare/v1.2.0...v1.2.2
+[1.2.0]: https://github.com/eitanav/coffe-thing/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/eitanav/coffe-thing/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/eitanav/coffe-thing/releases/tag/v1.0.0

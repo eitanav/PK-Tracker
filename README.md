@@ -16,7 +16,7 @@ population-average model; individual metabolism varies widely.
 
 No Python, no terminal. Four steps:
 
-1. **Download** → **[PKTracker-Setup.exe](https://github.com/eitanav/coffe-thing/releases/download/v1.0.0/PKTracker-Setup.exe)** (the download starts immediately; ~100 MB).
+1. **Download** → **[PKTracker-Setup.exe](https://github.com/eitanav/coffe-thing/releases/latest/download/PKTracker-Setup.exe)** (the download starts immediately; ~100 MB).
 2. **Double-click** the downloaded file.
 3. If a blue **"Windows protected your PC"** box appears (normal for new, unsigned
    apps — not a virus): click **More info → Run anyway**.
@@ -26,7 +26,7 @@ No Python, no terminal. Four steps:
 <details>
 <summary>Prefer no install? Portable version</summary>
 
-Download **[PKTracker-portable-windows.zip](https://github.com/eitanav/coffe-thing/releases/download/v1.0.0/PKTracker-portable-windows.zip)**,
+Download **[PKTracker-portable-windows.zip](https://github.com/eitanav/coffe-thing/releases/latest/download/PKTracker-portable-windows.zip)**,
 right-click → **Extract All**, then double-click **`PKTracker.exe`**.
 </details>
 
@@ -47,8 +47,9 @@ Two surfaces:
   dose shows a confirmation with the resulting level.
 - **Floating widget** — a small frameless panel showing the current state of the
   active substance at a glance, with a `+ dose` button. It opens automatically
-  and defaults to **pinned to desktop** (sits behind other windows like a
-  gadget); switch it to **float on top** from Settings or its right-click menu.
+  and defaults to **pinned to desktop** (behind normal windows like a gadget);
+  switch it to **float on top** from Settings or its right-click menu if you
+  prefer it above every app.
 - **Settings** (button or tray) — one place for the **theme** (dark / light),
   the widget (show/hide, pinned vs float), and links to calibration and custom
   substances. Closing the main window keeps the app alive in the system tray.
@@ -113,10 +114,10 @@ database lives at `~/.pk_tracker/pk_tracker.sqlite`.
    limit and to reach 0.00 — estimates only, never a basis for deciding to drive.
 7. **Floating widget & tray** — a small status widget opens automatically at
    startup, **pinned to the desktop** by default. Right-click it (or use Settings
-   / the tray menu) to switch to **Float on top**, or hide it. Closing the main
-   window keeps the app running in the system tray. Note: this is the app's own
-   floating panel, not a Windows 11 Widgets-board widget (a different Microsoft
-   technology).
+   / the tray menu) to switch between **Pinned to desktop** and **Float on top**,
+   find it, or hide it. Closing the main window keeps the app running in the
+   system tray. Note: this is the app's own floating panel, not a Windows 11
+   Widgets-board widget (a different Microsoft technology).
 8. **Settings** — choose the **theme** (dark / light) and control the widget in
    one place. **Calibration** sets body mass, sex, and per-substance tolerance;
    **New substance…** adds your own.

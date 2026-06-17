@@ -5,6 +5,7 @@
 -- key/value store for calibration. All timestamps are ISO 8601 in UTC.
 
 PRAGMA foreign_keys = ON;
+-- App-level schema version is stored in PRAGMA user_version by the Python migration layer.
 
 CREATE TABLE IF NOT EXISTS substances (
     id                 TEXT PRIMARY KEY,

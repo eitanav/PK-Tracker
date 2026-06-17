@@ -1,7 +1,7 @@
 """System tray icon and menu, plus a generated application icon.
 
 Closing the main window hides to the tray instead of quitting; the tray menu
-brings the dashboard back, toggles the floating widget, or quits for real.
+brings the dashboard back, finds/hides the floating widget, or quits for real.
 """
 
 from __future__ import annotations
@@ -114,14 +114,15 @@ def make_app_icon(accent: str = _ACCENT, size: int = 64) -> QIcon:
 
 
 class AppTray(QSystemTrayIcon):
-    def __init__(self, icon: QIcon, *, on_show, on_toggle_widget, on_toggle_pin,
+    def __init__(self, icon: QIcon, *, on_show, on_show_widget, on_hide_widget, on_toggle_pin,
                  on_settings, on_quit, parent=None):
         super().__init__(icon, parent)
         self.setToolTip("PK Tracker")
         menu = QMenu()
         menu.addAction("Show dashboard", on_show)
-        menu.addAction("Toggle widget", on_toggle_widget)
-        menu.addAction("Pin widget to desktop", on_toggle_pin)
+        menu.addAction("Show / find widget", on_show_widget)
+        menu.addAction("Hide widget", on_hide_widget)
+        menu.addAction("Pin / float widget", on_toggle_pin)
         menu.addSeparator()
         menu.addAction("Settings…", on_settings)
         menu.addAction("Quit", on_quit)

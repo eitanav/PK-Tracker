@@ -19,7 +19,7 @@ PK Tracker הוא כלי שולחני שמראה כמה חומר (קפאין, א
 ### צעד 1 — מורידים את הקובץ
 לוחצים על הקישור הזה, וההורדה מתחילה לבד:
 
-### 👉 [להורדת PKTracker-Setup.exe (לחיצה כאן)](https://github.com/eitanav/coffe-thing/releases/download/v1.0.0/PKTracker-Setup.exe)
+### 👉 [להורדת PKTracker-Setup.exe (לחיצה כאן)](https://github.com/eitanav/coffe-thing/releases/latest/download/PKTracker-Setup.exe)
 
 הקובץ יישמר בתיקיית **"הורדות" (Downloads)** שלך. זה קובץ גדול (~100 מ"ב), אז זה
 יכול לקחת דקה.
@@ -52,7 +52,7 @@ PK Tracker הוא כלי שולחני שמראה כמה חומר (קפאין, א
 
 מי שלא רוצה להתקין כלום:
 
-1. מורידים את [PKTracker-portable-windows.zip](https://github.com/eitanav/coffe-thing/releases/download/v1.0.0/PKTracker-portable-windows.zip)
+1. מורידים את [PKTracker-portable-windows.zip](https://github.com/eitanav/coffe-thing/releases/latest/download/PKTracker-portable-windows.zip)
 2. לחיצה ימנית על הקובץ → **Extract All** (חלץ הכול).
 3. נכנסים לתיקייה שנוצרה ולוחצים פעמיים על **`PKTracker.exe`**.
 
@@ -217,8 +217,9 @@ Spirits / Pint) כדי לרשום אותו. תופיע הודעת אישור י�
 לחיצה ימנית על האייקון במגש פותחת תפריט:
 
 - **Show dashboard** — להחזיר את החלון הראשי.
-- **Toggle widget** — להפעיל/לכבות את החלון הצף.
-- **Pin widget to desktop** — להחליף בין "מוצמד לשולחן העבודה" ל"צף למעלה".
+- **Show / find widget** — להציג או למצוא את החלון הצף אם הוא מוסתר מאחורי חלונות.
+- **Hide widget** — להסתיר את החלון הצף.
+- **Pin / float widget** — להחליף בין "מוצמד לשולחן העבודה" ל"צף למעלה".
 - **Settings…** — לפתוח את חלון ההגדרות.
 - **Quit** — לצאת באמת.
 

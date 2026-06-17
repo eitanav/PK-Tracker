@@ -101,8 +101,9 @@ class SettingsDialog(QDialog):
         modef.addRow("Behaviour", self.mode_box)
         root.addLayout(modef)
         hint = QLabel(
-            "Pinned sits on the desktop like a gadget; Float keeps it above every "
-            "other window. Drag the widget anywhere; right-click it for the same options."
+            "Pinned sits on the desktop behind normal windows like a gadget. "
+            "Choose Float only if you want it above every app. Drag the widget "
+            "anywhere; right-click it for the same options."
         )
         hint.setObjectName("Muted")
         hint.setWordWrap(True)
@@ -159,7 +160,8 @@ class SettingsDialog(QDialog):
         root.addLayout(sf)
 
         sleep_help = QLabel(
-            "How late you can have caffeine. The default keeps caffeine still in "
+            "How late you can have caffeine. This is a planning estimate, not a "
+            "sleep or medical guarantee. The default keeps caffeine still in "
             "your body at bedtime at or below a target amount. Research (Drake 2013; "
             "SLEEP 2025) finds caffeine even 6 h before bed disrupts sleep — a small "
             "coffee needs ~4 h to clear enough, a standard cup ~9 h. ~50 mg by "
@@ -184,8 +186,11 @@ class SettingsDialog(QDialog):
         cal.clicked.connect(self.window._open_calibration)
         cus = QPushButton("New substance…")
         cus.clicked.connect(self.window._open_custom)
+        about = QPushButton("About…")
+        about.clicked.connect(self.window._about)
         prow.addWidget(cal)
         prow.addWidget(cus)
+        prow.addWidget(about)
         prow.addStretch(1)
         root.addLayout(prow)
 

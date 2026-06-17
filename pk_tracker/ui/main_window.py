@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from datetime import timedelta, timezone
 
+import numpy as np
 from PySide6.QtCore import Qt, QTime, QTimer
 from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtWidgets import (
@@ -36,11 +37,13 @@ from PySide6.QtWidgets import (
     QSpinBox,
     QSystemTrayIcon,
     QTimeEdit,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
 from ..controller import SLEEP_SENSITIVITY_MG, now_utc
+from ..core.engine import Dose
 from . import status
 from .plots import TimelinePlot
 from .settings import CalibrationDialog, CustomSubstanceDialog, SettingsDialog
@@ -106,7 +109,8 @@ class MainWindow(QMainWindow):
         )
         self.tray = AppTray(
             self.icon, on_show=self.show_dashboard,
-            on_toggle_widget=self.toggle_widget, on_toggle_pin=self.toggle_widget_pin,
+            on_show_widget=self.show_widget, on_hide_widget=self.hide_widget,
+            on_toggle_pin=self.toggle_widget_pin,
             on_settings=self._open_settings, on_quit=self.quit_app, parent=self,
         )
         if QSystemTrayIcon.isSystemTrayAvailable():
@@ -123,6 +127,8 @@ class MainWindow(QMainWindow):
         if self.controller.get_setting("ui_widget_enabled", "1") == "1":
             self.widget.show()
             self.widget.refresh()
+        if hasattr(self, "widget_toggle"):
+            self.widget_toggle.setChecked(self.widget.isVisible())
 
         self.timer = QTimer(self)
         self.timer.setInterval(20_000)   # redraw + alert check only
@@ -163,6 +169,8 @@ class MainWindow(QMainWindow):
         self.custom_amount.setValue(90)
         self.mins_ago = QSpinBox()
         self.mins_ago.setRange(0, 1440)
+        self.mins_ago.setSingleStep(15)
+        self.mins_ago.setKeyboardTracking(False)
         self.mins_ago.setSuffix(" min ago")
         log_btn = QPushButton("Log")
         log_btn.setObjectName("Accent")
@@ -234,6 +242,27 @@ class MainWindow(QMainWindow):
         self.overlay_chk = QCheckBox("Overlay all (effect %)")
         self.overlay_chk.stateChanged.connect(self._redraw_plot)
         controls.addWidget(self.overlay_chk)
+        self.sim_chk = QCheckBox("Sim dose")
+        self.sim_chk.setToolTip("Preview a hypothetical dose without logging it")
+        self.sim_chk.stateChanged.connect(self._redraw_plot)
+        controls.addWidget(self.sim_chk)
+        self.sim_amount = QSpinBox()
+        self.sim_amount.setRange(1, 1000)
+        self.sim_amount.setSingleStep(10)
+        self.sim_amount.setSuffix(" mg")
+        self.sim_amount.setValue(90)
+        self.sim_amount.valueChanged.connect(self._redraw_plot)
+        controls.addWidget(self.sim_amount)
+        self.sim_in_label = QLabel("in")
+        controls.addWidget(self.sim_in_label)
+        self.sim_in_min = QSpinBox()
+        self.sim_in_min.setRange(0, 24 * 60)
+        self.sim_in_min.setSingleStep(15)
+        self.sim_in_min.setKeyboardTracking(False)
+        self.sim_in_min.setSuffix(" min")
+        self.sim_in_min.setValue(60)
+        self.sim_in_min.valueChanged.connect(self._redraw_plot)
+        controls.addWidget(self.sim_in_min)
         controls.addStretch(1)
         controls.addWidget(QLabel("Window"))
         self.window_box = QComboBox()
@@ -357,16 +386,17 @@ class MainWindow(QMainWindow):
 
         v.addStretch(1)
 
-        for label, slot in [
-            ("Show floating widget", lambda: self.set_widget_visible(True)),
-            ("Settings…", self._open_settings),
-            ("Calibration…", self._open_calibration),
-            ("New substance…", self._open_custom),
-            ("About", self._about),
-        ]:
-            b = QPushButton(label)
-            b.clicked.connect(slot)
-            v.addWidget(b)
+        bottom = QHBoxLayout()
+        self.widget_toggle = QToolButton()
+        self.widget_toggle.setText("Widget")
+        self.widget_toggle.setCheckable(True)
+        self.widget_toggle.setToolTip("Show/hide the floating widget. Pin/float mode lives in Settings.")
+        self.widget_toggle.clicked.connect(lambda checked: self.set_widget_visible(bool(checked)))
+        bottom.addWidget(self.widget_toggle)
+        settings_btn = QPushButton("Settings…")
+        settings_btn.clicked.connect(self._open_settings)
+        bottom.addWidget(settings_btn, 1)
+        v.addLayout(bottom)
         return panel
 
     def _h2(self, text):
@@ -399,10 +429,12 @@ class MainWindow(QMainWindow):
             b.clicked.connect(lambda _=False, p=preset: self._log_preset(p))
             self.preset_box.addWidget(b)
         self.custom_amount.setSuffix(f" {sub.unit}")
+        self.sim_amount.setSuffix(f" {sub.unit}")
         # Seed the custom field with a representative amount for this substance so
         # it is never an absurd default (e.g. 90 g of ethanol = ~7 drinks).
         if sub.presets:
             self.custom_amount.setValue(sub.presets[0].amount)
+            self.sim_amount.setValue(int(sub.presets[0].amount))
         if sub.is_alcohol:
             self.custom_hint.setText(
                 "Tip: tap a drink above to log it. The box below is grams of pure "
@@ -417,6 +449,10 @@ class MainWindow(QMainWindow):
         self.sleep_panel.setVisible(sub.redose_eligible)
         self.timing_panel.setVisible(sub.redose_eligible)
         self.alcohol_panel.setVisible(sub.is_alcohol)
+        self.sim_chk.setVisible(sub.redose_eligible)
+        self.sim_amount.setVisible(sub.redose_eligible)
+        self.sim_in_label.setVisible(sub.redose_eligible)
+        self.sim_in_min.setVisible(sub.redose_eligible)
 
     # ----- dose logging ------------------------------------------------------
     def _log_preset(self, preset):
@@ -557,6 +593,33 @@ class MainWindow(QMainWindow):
                 effect_pct = res.effect / peak * 100.0
 
         self.plot.add_substance(res.x, conc_disp, effect_pct, sub.color, primary=True)
+        hover_series = [("Level", conc_disp, f" {sub.conc_unit}")]
+        if effect_pct is not None:
+            hover_series.append(("Effect", effect_pct, "%"))
+        y_norm_conc = conc_disp
+        y_norm_eff = effect_pct
+
+        if self.sim_chk.isChecked() and sub.redose_eligible:
+            sim_taken = now + timedelta(minutes=self.sim_in_min.value())
+            sim_dose = Dose(self.active_sid, float(self.sim_amount.value()), sub.unit, sim_taken)
+            sim_tl = self.controller.timeline(self.active_sid, self.controller.doses(self.active_sid) + [sim_dose])
+            sim_res = sim_tl.curve(start, end, 600)
+            sim_conc = sim_res.concentration * sub.conc_scale
+            sim_effect_pct = None
+            if sim_res.effect is not None:
+                sim_peak = max(tl.personal_peak_effect(now=now), sim_tl.personal_peak_effect(now=end))
+                if sim_peak > 0:
+                    sim_effect_pct = sim_res.effect / sim_peak * 100.0
+            sim_color = COLORS["warn"]
+            self.plot.add_simulation(sim_res.x, sim_conc, sim_effect_pct, sim_color)
+            hover_series.append(("Sim level", sim_conc, f" {sub.conc_unit}"))
+            if sim_effect_pct is not None:
+                hover_series.append(("Sim effect", sim_effect_pct, "%"))
+                y_norm_eff = sim_effect_pct if y_norm_eff is None else np.maximum(y_norm_eff, sim_effect_pct)
+            y_norm_conc = np.maximum(y_norm_conc, sim_conc)
+
+        self.plot.set_hover_data(res.x, hover_series)
+        self.plot.set_normalized_y_ranges(y_norm_conc, y_norm_eff)
         self.plot.set_left_label(sub.conc_unit)
 
         # Keep the legend in step with what is actually drawn.
@@ -865,6 +928,16 @@ class MainWindow(QMainWindow):
         else:
             self.widget.hide()
         self.controller.set_setting("ui_widget_enabled", "1" if visible else "0")
+        if hasattr(self, "widget_toggle"):
+            self.widget_toggle.blockSignals(True)
+            self.widget_toggle.setChecked(bool(visible))
+            self.widget_toggle.blockSignals(False)
+
+    def show_widget(self):
+        self.set_widget_visible(True)
+
+    def hide_widget(self):
+        self.set_widget_visible(False)
 
     def toggle_widget(self):
         self.set_widget_visible(not self.widget.isVisible())
@@ -875,7 +948,7 @@ class MainWindow(QMainWindow):
         self.tray.showMessage(
             "Widget hidden for now",
             "It'll be back next time you open PK Tracker. Bring it back now from the "
-            "tray menu (Toggle widget), or turn it off for good in Settings.",
+            "tray menu (Show / find widget), or turn it off for good in Settings.",
             self.icon, 6000,
         )
 

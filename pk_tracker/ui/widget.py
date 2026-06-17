@@ -11,7 +11,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 import numpy as np
-from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtCore import QPoint, QRect, Qt, QTimer
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QFrame,
@@ -42,15 +42,16 @@ class FloatingWidget(QWidget):
         self._on_close_cb = on_close or (lambda: None)
         self._drag_offset: QPoint | None = None
 
-        # "Pinned to desktop" sits the widget at the desktop level (behind other
-        # windows) like a gadget; otherwise it floats on top of everything.
-        # Pinned is the default so it feels like part of the desktop, not a popup.
+        # "Pinned to desktop" is the first-run default: it sits below normal
+        # windows like a desktop gadget. Users can opt into float-on-top from
+        # Settings, the tray, or the widget context menu.
         self.pinned = self.controller.get_setting(_PINNED_KEY, "1") == "1"
         self._apply_window_flags()
         self.setAttribute(Qt.WA_TranslucentBackground)
         # Never steal focus from the user's active window when (re)shown.
         self.setAttribute(Qt.WA_ShowWithoutActivating)
         self.setFixedSize(250, 196)
+        self.setWindowTitle("PK Tracker widget")
 
         panel = QFrame(self)
         panel.setObjectName("Panel")
@@ -127,13 +128,15 @@ class FloatingWidget(QWidget):
         self.controller.set_setting(_CLOSE_BTN_KEY, "1" if visible else "0")
 
     # ----- window mode (float-on-top vs pinned-to-desktop) -------------------
-    def _apply_window_flags(self):
+    def _apply_window_flags(self, *, force_top: bool = False):
         flags = Qt.FramelessWindowHint | Qt.Tool
-        if self.pinned:
+        if self.pinned and not force_top:
             # Desktop-gadget style: keep it below normal windows and out of the
             # focus chain so it behaves like part of the desktop, not a popup.
             flags |= Qt.WindowStaysOnBottomHint | Qt.WindowDoesNotAcceptFocus
         else:
+            # Normal float mode, or a short explicit "find widget" reveal while
+            # the persisted mode remains pinned-to-desktop.
             flags |= Qt.WindowStaysOnTopHint
         self.setWindowFlags(flags)
 
@@ -156,16 +159,32 @@ class FloatingWidget(QWidget):
             self.lower()
 
     def reveal(self):
-        """Bring the widget somewhere the user can definitely see it: on a visible
-        screen and raised to the front, even in pinned (stays-on-bottom) mode.
-        Used by the dashboard button, tray toggle, and Settings."""
+        """Bring the widget somewhere the user can definitely see it.
+
+        In pinned mode this is an explicit temporary "find it" action: the saved
+        preference stays pinned, but the window is raised for a few seconds and
+        then re-sunk to the desktop layer. This fixes the confusing case where a
+        tray/dashboard toggle acted on an already-visible-but-covered widget.
+        """
         self._restore_position()          # re-clamps onto a connected screen
         self._suppress_lower = True
+        if self.pinned:
+            self._apply_window_flags(force_top=True)
         self.show()
         self._suppress_lower = False
         self.raise_()
-        if not self.pinned:          # pinned widget refuses focus; raise_ is enough
+        if not self.pinned:
             self.activateWindow()
+        else:
+            QTimer.singleShot(3500, self._restore_pinned_layer)
+
+    def _restore_pinned_layer(self):
+        """Return an explicitly revealed pinned widget to the desktop layer."""
+        if not self.pinned or not self.isVisible():
+            return
+        self._apply_window_flags()
+        self.show()
+        self.lower()
 
     # ----- state -------------------------------------------------------------
     def set_active_substance(self, sid: str):
