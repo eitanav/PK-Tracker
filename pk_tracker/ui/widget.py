@@ -44,13 +44,16 @@ class FloatingWidget(QWidget):
 
         # "Pinned to desktop" sits the widget at the desktop level (behind other
         # windows) like a gadget; otherwise it floats on top of everything.
-        # Pinned is the default so it feels like part of the desktop, not a popup.
-        self.pinned = self.controller.get_setting(_PINNED_KEY, "1") == "1"
+        # Float-on-top is now the first-run default. Pinned-to-desktop is still
+        # available, but defaulting to it made first launch look broken because
+        # the dashboard could cover the widget immediately after startup.
+        self.pinned = self.controller.get_setting(_PINNED_KEY, "0") == "1"
         self._apply_window_flags()
         self.setAttribute(Qt.WA_TranslucentBackground)
         # Never steal focus from the user's active window when (re)shown.
         self.setAttribute(Qt.WA_ShowWithoutActivating)
         self.setFixedSize(250, 196)
+        self.setWindowTitle("PK Tracker widget")
 
         panel = QFrame(self)
         panel.setObjectName("Panel")
