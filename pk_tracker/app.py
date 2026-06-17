@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import sys
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from .controller import AppController
@@ -42,6 +43,11 @@ def main() -> int:
         controller.set_setting("ui_disclaimer_ack", "1")
 
     window.show()
+    # If the widget is enabled, reveal it after the dashboard is visible. This
+    # avoids the first-run "widget does not work" trap where desktop-pinned mode
+    # can be shown behind the main window immediately after startup.
+    if controller.get_setting("ui_widget_enabled", "1") == "1":
+        QTimer.singleShot(0, window.widget.reveal)
     return app.exec()
 
 

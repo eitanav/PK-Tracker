@@ -25,6 +25,7 @@ from ..core.substances import (
 )
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
+SCHEMA_VERSION = 2
 
 # Columns of the substances table, in order, used for round-tripping.
 _SUBSTANCE_COLUMNS = [
@@ -81,6 +82,7 @@ class Database:
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.init_schema()
         self._migrate()
+        self._set_schema_version()
         if seed:
             self.seed_builtins()
 
@@ -90,12 +92,21 @@ class Database:
         self.conn.commit()
 
     def _migrate(self) -> None:
-        """Add columns introduced after a DB was first created (idempotent)."""
+        """Apply lightweight, idempotent migrations for existing user databases."""
         existing = {row[1] for row in self.conn.execute("PRAGMA table_info(substances)")}
         for col, col_type in _MIGRATION_COLUMNS.items():
             if col not in existing:
                 self.conn.execute(f"ALTER TABLE substances ADD COLUMN {col} {col_type}")
         self.conn.commit()
+
+    def _set_schema_version(self) -> None:
+        """Persist the app-level schema version for future migrations/support."""
+        self.conn.execute("PRAGMA user_version = %d" % SCHEMA_VERSION)
+        self.conn.commit()
+
+    def schema_version(self) -> int:
+        """Current app-level SQLite schema version."""
+        return int(self.conn.execute("PRAGMA user_version").fetchone()[0])
 
     def seed_builtins(self, library_path: str | Path = DEFAULT_LIBRARY_PATH) -> None:
         """Seed substances + presets from the JSON library if the DB is empty."""
@@ -109,6 +120,7 @@ class Database:
 
     # ----- substances --------------------------------------------------------
     def add_substance(self, sub: Substance, *, commit: bool = True) -> None:
+        self._validate_substance(sub)
         values = {
             "id": sub.id, "name": sub.name, "model": sub.model,
             "half_life_h": sub.half_life_h, "ka": sub.ka, "ke": sub.ke,
@@ -193,6 +205,7 @@ class Database:
         self, substance_id: str, amount: float, unit: str,
         taken_at: datetime, note: str = "",
     ) -> Dose:
+        self._validate_dose(amount, taken_at)
         cur = self.conn.execute(
             "INSERT INTO doses (substance_id, amount, unit, taken_at, note)"
             " VALUES (?, ?, ?, ?, ?)",
@@ -228,6 +241,8 @@ class Database:
         self, dose_id: int, *, amount: float | None = None,
         taken_at: datetime | None = None, note: str | None = None,
     ) -> None:
+        if amount is not None or taken_at is not None:
+            self._validate_dose(1.0 if amount is None else amount, taken_at or datetime.now(timezone.utc))
         sets, params = [], []
         if amount is not None:
             sets.append("amount = ?")
@@ -287,6 +302,7 @@ class Database:
         return profile
 
     def save_profile(self, profile: UserProfile) -> None:
+        self._validate_profile(profile)
         for key in _PROFILE_SCALARS:
             self.set_profile_value(key, getattr(profile, key))
         for sub_id, factor in profile.tolerance.items():
@@ -304,6 +320,49 @@ class Database:
 
     def set_setting(self, key: str, value) -> None:
         self.set_profile_value(key, value)
+
+    # ----- validation --------------------------------------------------------
+    def _validate_dose(self, amount: float, taken_at: datetime) -> None:
+        if amount <= 0:
+            raise ValueError("dose amount must be positive")
+        if taken_at.tzinfo is None:
+            raise ValueError("taken_at must be timezone-aware")
+
+    def _validate_profile(self, profile: UserProfile) -> None:
+        if not 30 <= profile.body_mass_kg <= 250:
+            raise ValueError("body_mass_kg must be between 30 and 250")
+        if profile.beta <= 0:
+            raise ValueError("alcohol beta must be positive")
+        if not 0 <= profile.legal_bac_limit <= 0.20:
+            raise ValueError("legal_bac_limit must be between 0 and 0.20 g/dL")
+        if profile.alcohol_ramp_min < 0:
+            raise ValueError("alcohol_ramp_min must be non-negative")
+        for sid, factor in profile.tolerance.items():
+            if not 0.5 <= float(factor) <= 1.5:
+                raise ValueError(f"tolerance for {sid} must be between 0.5 and 1.5")
+        for sid, half_life in profile.half_life_overrides.items():
+            if float(half_life) <= 0:
+                raise ValueError(f"half-life override for {sid} must be positive")
+
+    def _validate_substance(self, sub: Substance) -> None:
+        if not sub.id or not sub.name:
+            raise ValueError("substance id and name are required")
+        if sub.model != "widmark_zero_order":
+            for field_name in ("ka", "f", "v_l_per_kg"):
+                value = getattr(sub, field_name)
+                if value is None or value <= 0:
+                    raise ValueError(f"{field_name} must be positive for {sub.id}")
+            if sub.half_life_h is not None and sub.half_life_h <= 0:
+                raise ValueError(f"half_life_h must be positive for {sub.id}")
+            if sub.ke is not None and sub.ke <= 0:
+                raise ValueError(f"ke must be positive for {sub.id}")
+        if sub.ec50 is not None and sub.ec50 <= 0:
+            raise ValueError(f"ec50 must be positive for {sub.id}")
+        if sub.conc_scale <= 0:
+            raise ValueError(f"conc_scale must be positive for {sub.id}")
+        for preset in sub.presets:
+            if preset.amount <= 0:
+                raise ValueError(f"preset amount must be positive for {sub.id}")
 
     # ----- lifecycle ---------------------------------------------------------
     def close(self) -> None:
