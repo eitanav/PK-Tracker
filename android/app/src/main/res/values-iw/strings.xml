@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PK Tracker</string>
+
+    <string name="nav_now">עכשיו</string>
+    <string name="nav_history">היסטוריה</string>
+    <string name="nav_settings">הגדרות</string>
+
+    <string name="substance">חומר</string>
+    <string name="log_a_dose">רישום מנה</string>
+    <string name="custom_amount">כמות</string>
+    <string name="minutes_ago">דקות אחורה</string>
+    <string name="log">רשום</string>
+    <string name="logged_confirm">נרשם %1$s</string>
+
+    <string name="in_body">בגוף</string>
+    <string name="jitter_zone">אזור עצבנות ~%1$d מ״ג</string>
+    <string name="blood_level">רמה בדם</string>
+    <string name="bac">אלכוהול בדם</string>
+    <string name="since_last">מאז האחרונה</string>
+    <string name="projected_peak">שיא צפוי</string>
+    <string name="effect">אפקט</string>
+    <string name="today">היום</string>
+    <string name="of_recent_peak">%1$d%% מהשיא האחרון</string>
+    <string name="current_level">רמה נוכחית</string>
+
+    <string name="redose">מנה חוזרת</string>
+    <string name="redose_now">עכשיו</string>
+    <string name="redose_at">מנה חוזרת ~ %1$s</string>
+    <string name="peak_at">שיא ~ %1$s</string>
+    <string name="sober">מפוכח</string>
+    <string name="sober_at">מפוכח ~ %1$s</string>
+    <string name="under_limit_at">מתחת לסף ~ %1$s</string>
+    <string name="clearing">מתפנה</string>
+    <string name="no_active_dose">אין מנה פעילה</string>
+
+    <string name="sleep_cutoff">חתך שינה</string>
+    <string name="latest_caffeine">☕ %1$s אחרון: %2$s</string>
+    <string name="no_more_before_bed">☕ אין עוד %1$s לפני השינה</string>
+    <string name="sleep_keeps_below">שומר על %1$s ברמה של עד ~%2$d מ״ג בגוף בשעה %3$s.</string>
+    <string name="sleep_already_over">מה שכבר שתית צפוי להגיע ל~%1$d מ״ג בשעה %2$s, מעל היעד של ~%3$d מ״ג.</string>
+    <string name="sleep_flat">חתך קבוע %1$d שעות לפני השינה ב-%2$s.</string>
+    <string name="sleep_config_mg">שינה %1$s · יעד ≤ %2$d מ״ג · שינוי בהגדרות</string>
+    <string name="sleep_config_hours">שינה %1$s · הפסקה %2$d שעות לפני · שינוי בהגדרות</string>
+
+    <string name="perfect_timing">🎯 תזמון מושלם</string>
+    <string name="be_sharp_at">להיות חד ב-</string>
+    <string name="timing_drink">☕ לשתות %1$d מ״ג ב-%2$s</string>
+    <string name="timing_peaks">מגיע לשיא בדיוק ב-%1$s (~%2$d מ״ג בגוף אז).</string>
+    <string name="timing_within">✓ בתוך חתך השינה שלך.</string>
+    <string name="timing_after">⚠ אחרי החתך של %1$s — עלול לפגוע בשינה.</string>
+    <string name="timing_drink_now">☕ לשתות %1$d מ״ג עכשיו</string>
+
+    <string name="sim_dose">מנת סימולציה</string>
+    <string name="sim_in">בעוד</string>
+    <string name="sim_hint">תצוגה מקדימה של מנה דמיונית בלי לרשום אותה</string>
+
+    <string name="alcohol_sober">אלכוהול בדם 0.000 — מפוכח. הערכה, לא ערובה חוקית.</string>
+    <string name="alcohol_bac">אלכוהול בדם %1$s.</string>
+    <string name="alcohol_below_limit">מתחת לסף %1$s ~ %2$s.</string>
+    <string name="alcohol_zero">מפוכח (0.00) ~ %1$s.</string>
+    <string name="alcohol_warn">הערכה גסה — אף פעם אל תשתמש בזה כדי להחליט אם לנהוג.</string>
+
+    <string name="no_doses">עדיין לא נרשמו מנות.</string>
+    <string name="undo_last">בטל אחרונה</string>
+    <string name="delete">מחק</string>
+    <string name="removed_dose">↩ הוסר %1$s</string>
+
+    <string name="appearance">מראה</string>
+    <string name="theme">ערכת נושא</string>
+    <string name="theme_system">מערכת</string>
+    <string name="theme_dark">כהה</string>
+    <string name="theme_light">בהיר</string>
+    <string name="language">שפה</string>
+    <string name="language_system">מערכת</string>
+    <string name="language_en">English</string>
+    <string name="language_he">עברית</string>
+    <string name="body_calibration">גוף וכיול</string>
+    <string name="body_mass">משקל גוף</string>
+    <string name="sex">מין</string>
+    <string name="sex_male">זכר</string>
+    <string name="sex_female">נקבה</string>
+    <string name="caffeine_half_life">זמן מחצית חיים לקפאין</string>
+    <string name="half_life_hint">ברירת מחדל ~5 שעות. מהיר יותר (~3–4) אם אתה מעשן; איטי יותר (~10) בגלולה או בהיריון.</string>
+    <string name="tolerance">סבילות</string>
+    <string name="tolerance_hint">0.5 רגיש · 1.0 בסיס · 1.5 מורגל</string>
+    <string name="sleep_settings">חתך שינה</string>
+    <string name="bedtime">שעת שינה</string>
+    <string name="method">שיטה</string>
+    <string name="method_mg">קפאין בשעת השינה (מ״ג)</string>
+    <string name="method_preset">רגישות</string>
+    <string name="method_hours">שעות לפני השינה</string>
+    <string name="target_mg">יעד (מ״ג בשינה)</string>
+    <string name="sensitivity">רגישות</string>
+    <string name="sensitivity_sensitive">רגיש מאוד (~25 מ״ג)</string>
+    <string name="sensitivity_average">רגיל (~50 מ״ג)</string>
+    <string name="sensitivity_resistant">עמיד (~100 מ״ג)</string>
+    <string name="hours_before_bed">הפסקה לפני השינה</string>
+    <string name="sleep_research">מבוסס על מחקרי קפאין/שינה (Drake 2013; SLEEP 2025). לא ייעוץ רפואי.</string>
+    <string name="data">נתונים</string>
+    <string name="export">ייצוא יומן מנות</string>
+    <string name="export_hint">שיתוף כל המנות כ-CSV — גיבוי, או לגיליון.</string>
+    <string name="about">אודות</string>
+    <string name="about_body">PK Tracker מעריך איך חומרים עולים ויורדים בגוף לפי מודלים פרמקוקינטיים ממוצעים. כלי למעקב עצמי, לא מכשיר רפואי.</string>
+    <string name="version">גרסה %1$s</string>
+    <string name="disclaimer">הערכות בלבד — לא ייעוץ רפואי. חילוף החומרים משתנה מאדם לאדם. אף פעם אל תשתמש בנתוני אלכוהול כדי להחליט אם לנהוג.</string>
+
+    <string name="mg">מ״ג</string>
+    <string name="hours_short">ש׳</string>
+    <string name="legend_solid">מלא = עד עכשיו</string>
+    <string name="legend_dashed">מקווקו = תחזית</string>
+    <string name="now">עכשיו</string>
+</resources>

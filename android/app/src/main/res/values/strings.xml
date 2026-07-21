@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PK Tracker</string>
+
+    <!-- Navigation -->
+    <string name="nav_now">Now</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- Substance / logging -->
+    <string name="substance">Substance</string>
+    <string name="log_a_dose">Log a dose</string>
+    <string name="custom_amount">Amount</string>
+    <string name="minutes_ago">min ago</string>
+    <string name="log">Log</string>
+    <string name="logged_confirm">Logged %1$s</string>
+
+    <!-- Status -->
+    <string name="in_body">in body</string>
+    <string name="jitter_zone">jitter zone ~%1$d mg</string>
+    <string name="blood_level">Blood level</string>
+    <string name="bac">BAC</string>
+    <string name="since_last">Since last</string>
+    <string name="projected_peak">Projected peak</string>
+    <string name="effect">Effect</string>
+    <string name="today">Today</string>
+    <string name="of_recent_peak">%1$d%% of recent peak</string>
+    <string name="current_level">current level</string>
+
+    <!-- Next action -->
+    <string name="redose">Redose</string>
+    <string name="redose_now">now</string>
+    <string name="redose_at">Redose ~ %1$s</string>
+    <string name="peak_at">Peak ~ %1$s</string>
+    <string name="sober">Sober</string>
+    <string name="sober_at">Sober ~ %1$s</string>
+    <string name="under_limit_at">Under limit ~ %1$s</string>
+    <string name="clearing">Clearing</string>
+    <string name="no_active_dose">No active dose</string>
+
+    <!-- Sleep cutoff -->
+    <string name="sleep_cutoff">Sleep cutoff</string>
+    <string name="latest_caffeine">☕ Latest %1$s: %2$s</string>
+    <string name="no_more_before_bed">☕ No more %1$s before bed</string>
+    <string name="sleep_keeps_below">Keeps %1$s at or below ~%2$d mg in your body at %3$s.</string>
+    <string name="sleep_already_over">What you\'ve already had projects to ~%1$d mg at %2$s, over your ~%3$d mg target.</string>
+    <string name="sleep_flat">A flat cutoff %1$d h before your %2$s bedtime.</string>
+    <string name="sleep_config_mg">Bedtime %1$s · target ≤ %2$d mg by bed · change in Settings</string>
+    <string name="sleep_config_hours">Bedtime %1$s · stop %2$d h before · change in Settings</string>
+
+    <!-- Perfect timing -->
+    <string name="perfect_timing">🎯 Perfect timing</string>
+    <string name="be_sharp_at">Be sharp at</string>
+    <string name="timing_drink">☕ Drink %1$d mg at %2$s</string>
+    <string name="timing_peaks">Peaks right at %1$s (~%2$d mg in body then).</string>
+    <string name="timing_within">✓ within your sleep cutoff.</string>
+    <string name="timing_after">⚠ after your %1$s curfew — may cost you sleep.</string>
+    <string name="timing_drink_now">☕ Drink %1$d mg now</string>
+
+    <!-- Simulation -->
+    <string name="sim_dose">Sim dose</string>
+    <string name="sim_in">in</string>
+    <string name="sim_hint">Preview a hypothetical dose without logging it</string>
+
+    <!-- Alcohol -->
+    <string name="alcohol_sober">BAC 0.000 g/dL — sober. Estimate, not a legal guarantee.</string>
+    <string name="alcohol_bac">BAC %1$s g/dL.</string>
+    <string name="alcohol_below_limit">Below %1$s limit ~ %2$s.</string>
+    <string name="alcohol_zero">Sober (0.00) ~ %1$s.</string>
+    <string name="alcohol_warn">Rough estimate — never use to decide whether to drive.</string>
+
+    <!-- History -->
+    <string name="no_doses">No doses logged yet.</string>
+    <string name="undo_last">Undo last</string>
+    <string name="delete">Delete</string>
+    <string name="removed_dose">↩ Removed %1$s</string>
+
+    <!-- Settings -->
+    <string name="appearance">Appearance</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+    <string name="language">Language</string>
+    <string name="language_system">System</string>
+    <string name="language_en">English</string>
+    <string name="language_he">עברית</string>
+    <string name="body_calibration">Body &amp; calibration</string>
+    <string name="body_mass">Body mass</string>
+    <string name="sex">Sex</string>
+    <string name="sex_male">Male</string>
+    <string name="sex_female">Female</string>
+    <string name="caffeine_half_life">Caffeine half-life</string>
+    <string name="half_life_hint">Default ~5 h. Faster (~3–4 h) if you smoke; slower (~10 h) on oral contraceptives or in pregnancy.</string>
+    <string name="tolerance">Tolerance</string>
+    <string name="tolerance_hint">0.5 sensitive · 1.0 baseline · 1.5 habituated</string>
+    <string name="sleep_settings">Sleep cutoff</string>
+    <string name="bedtime">Bedtime</string>
+    <string name="method">Method</string>
+    <string name="method_mg">Caffeine at bedtime (mg)</string>
+    <string name="method_preset">Sensitivity preset</string>
+    <string name="method_hours">Hours before bed</string>
+    <string name="target_mg">Target (mg by bed)</string>
+    <string name="sensitivity">Sensitivity</string>
+    <string name="sensitivity_sensitive">Very sensitive (~25 mg)</string>
+    <string name="sensitivity_average">Average (~50 mg)</string>
+    <string name="sensitivity_resistant">Resistant (~100 mg)</string>
+    <string name="hours_before_bed">Stop before bed</string>
+    <string name="sleep_research">Grounded in caffeine/sleep research (Drake 2013; SLEEP 2025). Not medical advice.</string>
+    <string name="data">Data</string>
+    <string name="export">Export dose log</string>
+    <string name="export_hint">Share every logged dose as CSV — a backup, or for a spreadsheet.</string>
+    <string name="about">About</string>
+    <string name="about_body">PK Tracker estimates how substances rise and fall in the body from population-average pharmacokinetic models. It is a quantified-self tool, not a medical device.</string>
+    <string name="version">Version %1$s</string>
+    <string name="disclaimer">Estimates only — not medical advice. Individual metabolism varies widely. Never use alcohol figures to decide whether to drive.</string>
+
+    <!-- Units / misc -->
+    <string name="mg">mg</string>
+    <string name="hours_short">h</string>
+    <string name="legend_solid">solid = so far</string>
+    <string name="legend_dashed">dashed = projected</string>
+    <string name="now">now</string>
+</resources>

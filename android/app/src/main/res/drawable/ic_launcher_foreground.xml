@@ -1,0 +1,42 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- steam -->
+    <path
+        android:strokeColor="#7EC8E3"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M46,26 q-5,6 0,12 q5,6 0,12" />
+    <path
+        android:strokeColor="#7EC8E3"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M60,26 q-5,6 0,12 q5,6 0,12" />
+
+    <!-- handle -->
+    <path
+        android:strokeColor="#D6A04A"
+        android:strokeWidth="5"
+        android:fillColor="#00000000"
+        android:pathData="M74,54 h6 a9,9 0 0 1 9,9 a9,9 0 0 1 -9,9 h-6" />
+
+    <!-- cup body -->
+    <path
+        android:fillColor="#D6A04A"
+        android:pathData="M35,50 h37 a3,3 0 0 1 3,3 v17 a15,15 0 0 1 -15,15 h-13 a15,15 0 0 1 -15,-15 v-17 a3,3 0 0 1 3,-3 z" />
+
+    <!-- clock face detail on the cup -->
+    <path
+        android:fillColor="#12181F"
+        android:pathData="M53.5,60 h3 v9 h6 v3 h-9 z" />
+
+    <!-- saucer -->
+    <path
+        android:fillColor="#B3813A"
+        android:pathData="M31,88 h46 a3,3 0 0 1 0,6 h-46 a3,3 0 0 1 0,-6 z" />
+</vector>
