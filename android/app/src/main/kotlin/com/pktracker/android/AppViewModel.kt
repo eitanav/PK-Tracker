@@ -228,7 +228,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             val ri = Scheduler.redoseInfo(tl, nowH)
             return when {
                 ri.overdue -> NextAction(ActionKind.REDOSE_NOW, null, "warn")
-                ri.redoseAtHours != null -> NextAction(ActionKind.REDOSE_AT, (ri.redoseAtHours * H_MS).toLong(), "accent")
+                ri.redoseAtHours != null -> NextAction(ActionKind.REDOSE_AT, (ri.redoseAtHours!! * H_MS).toLong(), "accent")
                 else -> null
             }
         }
