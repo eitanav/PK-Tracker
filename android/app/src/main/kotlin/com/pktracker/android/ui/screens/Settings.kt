@@ -1,6 +1,7 @@
 package com.pktracker.android.ui.screens
 
 import android.content.Intent
+import android.net.Uri
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -54,6 +55,8 @@ private fun LabeledValue(label: String, value: String) {
         Text(value, fontWeight = FontWeight.SemiBold)
     }
 }
+
+private const val RELEASES_URL = "https://github.com/eitanav/PK-Tracker/releases"
 
 private fun applyLanguage(code: String) {
     val locales = when (code) {
@@ -211,9 +214,27 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         SectionCard(title = stringResource(R.string.about)) {
             Text(stringResource(R.string.about_body), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.version, "1.0.3"), style = MaterialTheme.typography.bodySmall,
+            Text(stringResource(R.string.version, "1.0.4"), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
+            OutlinedButton(onClick = {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES_URL)))
+            }) { Text(stringResource(R.string.download_latest)) }
+            Spacer(Modifier.height(14.dp))
+            Text(stringResource(R.string.whats_new), color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(6.dp))
+            Text(stringResource(R.string.changelog_1_0_4), style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.changelog_1_0_3), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.changelog_1_0_2), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.changelog_1_0_1), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(12.dp))
             Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }

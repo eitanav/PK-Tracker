@@ -114,6 +114,12 @@
     <string name="about">About</string>
     <string name="about_body">PK Tracker estimates how substances rise and fall in the body from population-average pharmacokinetic models. It is a quantified-self tool, not a medical device.</string>
     <string name="version">Version %1$s</string>
+    <string name="download_latest">Download latest release</string>
+    <string name="whats_new">What\'s new</string>
+    <string name="changelog_1_0_4">1.0.4 — Added this download link and changelog, so you can always find and check the latest build from inside the app.</string>
+    <string name="changelog_1_0_3">1.0.3 — Brand-name drug labels (Ritalin/Attent, Concerta, Vyvanse, Adderall), a chart with real axes you can pan through past and future, more Hebrew coverage.</string>
+    <string name="changelog_1_0_2">1.0.2 — Fixed a crash on launch.</string>
+    <string name="changelog_1_0_1">1.0.1 — Accessibility and translation polish.</string>
     <string name="disclaimer">Estimates only — not medical advice. Individual metabolism varies widely. Never use alcohol figures to decide whether to drive.</string>
 
     <!-- Units / misc -->

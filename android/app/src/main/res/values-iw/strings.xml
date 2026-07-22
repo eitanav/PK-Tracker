@@ -104,6 +104,12 @@
     <string name="about">אודות</string>
     <string name="about_body">PK Tracker מעריך איך חומרים עולים ויורדים בגוף לפי מודלים פרמקוקינטיים ממוצעים. כלי למעקב עצמי, לא מכשיר רפואי.</string>
     <string name="version">גרסה %1$s</string>
+    <string name="download_latest">הורדת הגרסה האחרונה</string>
+    <string name="whats_new">מה חדש</string>
+    <string name="changelog_1_0_4">1.0.4 — נוספו קישור ההורדה והצ׳יינג׳לוג האלה, כדי שתמיד תוכל למצוא ולבדוק את הגרסה האחרונה מתוך האפליקציה עצמה.</string>
+    <string name="changelog_1_0_3">1.0.3 — שמות מסחריים לתרופות (ריטלין/אטנט, קונצרטה, וייוואנס, אדרל), גרף עם צירים אמיתיים שאפשר לגלול בו בין עבר לעתיד, כיסוי עברית נרחב יותר.</string>
+    <string name="changelog_1_0_2">1.0.2 — תוקנה קריסה בהפעלה.</string>
+    <string name="changelog_1_0_1">1.0.1 — שיפורי נגישות ותרגום.</string>
     <string name="disclaimer">הערכות בלבד — לא ייעוץ רפואי. חילוף החומרים משתנה מאדם לאדם. אף פעם אל תשתמש בנתוני אלכוהול כדי להחליט אם לנהוג.</string>
 
     <string name="mg">מ״ג</string>
