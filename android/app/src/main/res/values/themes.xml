@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Window chrome only; all UI is drawn by Compose. -->
-    <style name="Theme.PKTracker" parent="@android:style/Theme.Material.NoActionBar">
+    <style name="Theme.PKTracker" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
