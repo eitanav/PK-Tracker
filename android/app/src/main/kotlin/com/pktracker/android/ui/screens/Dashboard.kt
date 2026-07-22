@@ -188,13 +188,19 @@ private fun actionText(kind: ActionKind, timeMs: Long?): String = when (kind) {
 @Composable
 private fun ChartCard(s: DashboardState, simOn: Boolean, vm: AppViewModel, simMg: Int, simInMin: Int) {
     SectionCard {
-        TimelineChart(s.curve, Modifier.fillMaxWidth().height(220.dp))
+        TimelineChart(s.curve, Modifier.fillMaxWidth().height(220.dp), stringResource(R.string.chart_timeline))
         Spacer(Modifier.height(6.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             LegendDot(parseColor(s.substance.color, MaterialTheme.colorScheme.primary), stringResource(R.string.blood_level))
             Spacer(Modifier.width(12.dp))
             if (s.effectPct != null) LegendDot(Blue, stringResource(R.string.effect))
         }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "${stringResource(R.string.legend_solid)} · ${stringResource(R.string.legend_dashed)}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         if (s.redoseEligible) {
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -206,7 +212,7 @@ private fun ChartCard(s: DashboardState, simOn: Boolean, vm: AppViewModel, simMg
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.sim_in))
                 Spacer(Modifier.width(6.dp))
-                Stepper(simInMin, { vm.updateSettings { simInMin(it) } }, 15, 0..1440, " min")
+                Stepper(simInMin, { vm.updateSettings { simInMin(it) } }, 15, 0..1440, " ${stringResource(R.string.minutes_short)}")
             }
         }
     }
@@ -338,7 +344,7 @@ private fun TimingCard(s: DashboardState, vm: AppViewModel) {
 @Composable
 private fun AlcoholCard(s: DashboardState) {
     val a = s.alcohol ?: return
-    SectionCard(title = "BAC") {
+    SectionCard(title = stringResource(R.string.bac)) {
         if (a.bacNow <= 0) {
             Text(stringResource(R.string.alcohol_sober), color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {

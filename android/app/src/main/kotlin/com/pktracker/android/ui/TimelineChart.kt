@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.pktracker.android.CurveData
 import com.pktracker.android.ui.theme.Accent
@@ -37,7 +39,7 @@ private fun interp(xs: DoubleArray, ys: DoubleArray, x: Double): Double {
 }
 
 @Composable
-fun TimelineChart(curve: CurveData, modifier: Modifier = Modifier) {
+fun TimelineChart(curve: CurveData, modifier: Modifier = Modifier, description: String? = null) {
     val onSurface = MaterialTheme.colorScheme.onSurface
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val grid = muted.copy(alpha = 0.14f)
@@ -49,6 +51,7 @@ fun TimelineChart(curve: CurveData, modifier: Modifier = Modifier) {
 
     Canvas(
         modifier = modifier
+            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
             .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { touchX = it.x },

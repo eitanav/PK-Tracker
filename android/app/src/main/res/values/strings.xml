@@ -61,6 +61,7 @@
     <string name="sim_dose">Sim dose</string>
     <string name="sim_in">in</string>
     <string name="sim_hint">Preview a hypothetical dose without logging it</string>
+    <string name="minutes_short">min</string>
 
     <!-- Alcohol -->
     <string name="alcohol_sober">BAC 0.000 g/dL — sober. Estimate, not a legal guarantee.</string>
@@ -121,4 +122,5 @@
     <string name="legend_solid">solid = so far</string>
     <string name="legend_dashed">dashed = projected</string>
     <string name="now">now</string>
+    <string name="chart_timeline">Timeline chart of blood level and effect, from two hours ago to twelve hours ahead.</string>
 </resources>
