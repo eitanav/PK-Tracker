@@ -5,6 +5,7 @@
     <!-- Navigation -->
     <string name="nav_now">Now</string>
     <string name="nav_history">History</string>
+    <string name="nav_insights">Insights</string>
     <string name="nav_settings">Settings</string>
 
     <!-- Substance / logging -->
@@ -116,11 +117,30 @@
     <string name="version">Version %1$s</string>
     <string name="download_latest">Download latest release</string>
     <string name="whats_new">What\'s new</string>
+    <string name="changelog_2_0_0">2.0.0 — A big redesign: every substance now themes the whole dashboard in its own colour, a live gauge headlines your current level, and a new Insights tab shows when you have it, your weekly rhythm, and averages. Plus a curve-based logo and animations throughout.</string>
     <string name="changelog_1_0_4">1.0.4 — Added this download link and changelog, so you can always find and check the latest build from inside the app.</string>
     <string name="changelog_1_0_3">1.0.3 — Brand-name drug labels (Ritalin/Attent, Concerta, Vyvanse, Adderall), a chart with real axes you can pan through past and future, more Hebrew coverage.</string>
     <string name="changelog_1_0_2">1.0.2 — Fixed a crash on launch.</string>
     <string name="changelog_1_0_1">1.0.1 — Accessibility and translation polish.</string>
     <string name="disclaimer">Estimates only — not medical advice. Individual metabolism varies widely. Never use alcohol figures to decide whether to drive.</string>
+
+    <!-- Hero gauge -->
+    <string name="hero_jitter">of ~%1$d mg jitter zone</string>
+    <string name="hero_effect">%1$d%% of recent peak effect</string>
+    <string name="hero_bac">legal limit %1$s · never drive on this</string>
+
+    <!-- Insights -->
+    <string name="insights_window">last 30 days</string>
+    <string name="insights_empty">No doses logged yet — log a few and your patterns show up here.</string>
+    <string name="insights_when">When you have it</string>
+    <string name="insights_peak_hours">Busiest hours: %1$s</string>
+    <string name="insights_weekly">Weekly rhythm</string>
+    <string name="insights_averages">Averages</string>
+    <string name="insights_per_day">per active day</string>
+    <string name="insights_per_week">this week</string>
+    <string name="insights_first">usual first</string>
+    <string name="insights_streak">day streak</string>
+    <string name="insights_recent">Recent</string>
 
     <!-- Units / misc -->
     <string name="mg">mg</string>

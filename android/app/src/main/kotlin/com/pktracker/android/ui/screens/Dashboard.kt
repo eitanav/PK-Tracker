@@ -5,6 +5,9 @@
 
 package com.pktracker.android.ui.screens
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,9 +19,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowLeft
@@ -45,6 +50,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
@@ -59,6 +65,8 @@ import com.pktracker.android.ActionKind
 import com.pktracker.android.AppViewModel
 import com.pktracker.android.DashboardState
 import com.pktracker.android.R
+import com.pktracker.android.ui.Gauge
+import com.pktracker.android.ui.LocalAccent
 import com.pktracker.android.ui.SectionCard
 import com.pktracker.android.ui.TimelineChart
 import com.pktracker.android.ui.colorForKey
@@ -69,6 +77,7 @@ import com.pktracker.android.ui.theme.Blue
 import com.pktracker.android.ui.theme.Danger
 import com.pktracker.android.ui.theme.Warn
 import kotlinx.coroutines.delay
+import java.util.Locale
 import kotlin.math.roundToInt
 
 private fun parseColor(hex: String, fallback: Color): Color =
@@ -126,35 +135,73 @@ fun DashboardScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
     }
 }
 
+private class Hero(val value: Float, val unit: String, val caption: String, val fraction: Float, val decimals: Int)
+
+private fun fmtBig(v: Float, decimals: Int): String =
+    if (decimals == 0) v.roundToInt().toString() else String.format(Locale.US, "%.${decimals}f", v)
+
+@Composable
+private fun heroModel(s: DashboardState): Hero = when {
+    s.alcohol != null -> Hero(
+        value = s.alcohol.bacNow.toFloat(), unit = s.concUnit,
+        caption = stringResource(R.string.hero_bac, String.format(Locale.US, "%.2f", s.alcohol.limit)),
+        fraction = (if (s.alcohol.limit > 0) s.alcohol.bacNow / s.alcohol.limit else 0.0).toFloat(), decimals = 3,
+    )
+    s.bodyMg != null && s.overloadThresholdMg != null -> Hero(
+        value = s.bodyMg.toFloat(), unit = stringResource(R.string.mg),
+        caption = stringResource(R.string.hero_jitter, s.overloadThresholdMg.roundToInt()),
+        fraction = (s.bodyMg / s.overloadThresholdMg).toFloat(), decimals = 0,
+    )
+    s.bodyMg != null -> Hero(
+        value = s.bodyMg.toFloat(), unit = stringResource(R.string.mg),
+        caption = s.effectPct?.let { stringResource(R.string.hero_effect, it.roundToInt()) } ?: stringResource(R.string.in_body),
+        fraction = ((s.effectPct ?: 0.0) / 100.0).toFloat(), decimals = 0,
+    )
+    else -> Hero(
+        value = s.concValue.toFloat(), unit = s.concUnit,
+        caption = stringResource(R.string.current_level), fraction = 0f, decimals = 3,
+    )
+}
+
 @Composable
 private fun StatusCard(s: DashboardState) {
-    val accent = parseColor(s.substance.color, MaterialTheme.colorScheme.primary)
+    val accent = LocalAccent.current
+    val gaugeColor = if (s.overloadOver) Warn else accent
+    val hero = heroModel(s)
     SectionCard {
-        Text(substanceName(s.substance), style = MaterialTheme.typography.titleMedium, color = accent, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(6.dp))
-        val bigColor = if (s.overloadOver) Warn else accent
-        if (s.bodyMg != null) {
-            Text(
-                "${s.bodyMg.roundToInt()} ${stringResource(R.string.mg)}",
-                fontSize = 34.sp, fontWeight = FontWeight.Bold, color = bigColor, fontFamily = FontFamily.Monospace,
-            )
-            val caption = if (s.overloadThresholdMg != null)
-                "${stringResource(R.string.in_body)} · ${stringResource(R.string.jitter_zone, s.overloadThresholdMg.roundToInt())}"
-            else stringResource(R.string.in_body)
-            Text(caption, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            Text(
-                String.format(java.util.Locale.US, "%.3f", s.concValue),
-                fontSize = 34.sp, fontWeight = FontWeight.Bold, color = bigColor, fontFamily = FontFamily.Monospace,
-            )
-            Text("${stringResource(R.string.current_level)} · ${s.concUnit}",
-                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Gauge(hero.fraction, gaugeColor, Modifier.size(132.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    val animVal by animateFloatAsState(hero.value, tween(900), label = "hero")
+                    Text(fmtBig(animVal, hero.decimals), fontSize = 27.sp, fontWeight = FontWeight.Bold,
+                        color = gaugeColor, fontFamily = FontFamily.Monospace)
+                    Text(hero.unit, style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant, fontFamily = FontFamily.Monospace)
+                }
+            }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(substanceName(s.substance), style = MaterialTheme.typography.titleMedium, color = accent, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(6.dp))
+                Text(hero.caption, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                s.nextAction?.let { na ->
+                    Spacer(Modifier.height(10.dp))
+                    Text(actionText(na.kind, na.timeMs), color = colorForKey(na.colorKey),
+                        fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
         }
-        Spacer(Modifier.height(10.dp))
-        ReadoutRow(stringResource(R.string.blood_level), String.format(java.util.Locale.US, "%.3f %s", s.concValue, s.concUnit))
-        ReadoutRow(stringResource(R.string.since_last), sinceLabel(s.sinceLastMs, s.nowMs))
-        ReadoutRow(stringResource(R.string.projected_peak), fmtClock(s.projectedPeakMs))
-        s.effectPct?.let { ReadoutRow(stringResource(R.string.effect), stringResource(R.string.of_recent_peak, it.roundToInt())) }
+        Spacer(Modifier.height(14.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Tile(Modifier.weight(1f), stringResource(R.string.blood_level), String.format(Locale.US, "%.2f %s", s.concValue, s.concUnit))
+            Tile(Modifier.weight(1f), stringResource(R.string.since_last), sinceLabel(s.sinceLastMs, s.nowMs))
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Tile(Modifier.weight(1f), stringResource(R.string.projected_peak), fmtClock(s.projectedPeakMs))
+            Tile(Modifier.weight(1f), stringResource(R.string.effect),
+                s.effectPct?.let { "${it.roundToInt()}%" } ?: "—", if (s.effectPct != null) accent else null)
+        }
         if (s.dailyMg > 0) {
             val gl = s.dailyGuidelineMg
             val txt = if (gl != null) "${s.dailyMg.roundToInt()} / ${gl.roundToInt()} ${stringResource(R.string.mg)}"
@@ -162,23 +209,24 @@ private fun StatusCard(s: DashboardState) {
             val col = when {
                 gl != null && s.dailyMg >= gl -> Danger
                 gl != null && s.dailyMg >= 0.8 * gl -> Warn
-                else -> null
+                else -> MaterialTheme.colorScheme.onSurface
             }
-            ReadoutRow(stringResource(R.string.today), txt, col)
-        }
-        s.nextAction?.let { na ->
-            Spacer(Modifier.height(8.dp))
-            Text(actionText(na.kind, na.timeMs), color = colorForKey(na.colorKey), fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(10.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(stringResource(R.string.today), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(txt, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace, color = col)
+            }
         }
     }
 }
 
 @Composable
-private fun ReadoutRow(label: String, value: String, valueColor: Color? = null) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace,
-            color = valueColor ?: MaterialTheme.colorScheme.onSurface)
+private fun Tile(modifier: Modifier, label: String, value: String, valueColor: Color? = null) {
+    Column(modifier.clip(RoundedCornerShape(14.dp)).background(MaterialTheme.colorScheme.surfaceVariant).padding(12.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.height(6.dp))
+        Text(value, fontFamily = FontFamily.Monospace, style = MaterialTheme.typography.titleMedium,
+            color = valueColor ?: MaterialTheme.colorScheme.onSurface, maxLines = 1)
     }
 }
 

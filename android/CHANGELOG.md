@@ -9,6 +9,26 @@ tag `android-vX.Y.Z`, matching `versionName` in `app/build.gradle.kts`. The
 in-app **Settings → About** card links straight to that releases page and
 mirrors this changelog.
 
+## [2.0.0] - 2026-07-22
+
+### Added
+- **Per-substance theming.** The active substance now tints the whole
+  dashboard — gauge, chart, logo, nav and accents animate to its colour
+  (amber caffeine, blue Ritalin, green Vyvanse, purple Adderall, rose
+  alcohol).
+- **Hero gauge.** The status card leads with a circular gauge that sweeps
+  to your current load (mg vs jitter zone, effect %, or BAC vs limit) with
+  an animated count-up, plus a 2×2 grid of stat tiles.
+- **Insights tab** (replaces History). Turns the dose log into patterns:
+  the hours you actually reach for it, your weekly rhythm, doses/day, this
+  week's total, usual first-dose time, and a logging streak — with a
+  compact recent-doses list (delete / undo) kept underneath.
+- **New logo.** The launcher icon and in-app mark are now the
+  pharmacokinetic curve itself (absorption → peak → clearance), re-tinting
+  per substance.
+- **Animations.** Gauge sweep, number count-up, and grow-in bars, all
+  built on Compose's animation system.
+
 ## [1.0.4] - 2026-07-22
 
 ### Added

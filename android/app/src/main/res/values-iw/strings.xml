@@ -4,6 +4,7 @@
 
     <string name="nav_now">עכשיו</string>
     <string name="nav_history">היסטוריה</string>
+    <string name="nav_insights">תובנות</string>
     <string name="nav_settings">הגדרות</string>
 
     <string name="substance">חומר</string>
@@ -106,11 +107,30 @@
     <string name="version">גרסה %1$s</string>
     <string name="download_latest">הורדת הגרסה האחרונה</string>
     <string name="whats_new">מה חדש</string>
+    <string name="changelog_2_0_0">2.0.0 — עיצוב מחדש גדול: כל חומר צובע עכשיו את כל הדאשבורד בצבע שלו, גייג׳ חי מציג את הרמה הנוכחית, וטאב "תובנות" חדש מראה מתי אתה נוטל, את המקצב השבועי והממוצעים. בנוסף לוגו חדש מבוסס עקומה ואנימציות לאורך כל הדרך.</string>
     <string name="changelog_1_0_4">1.0.4 — נוספו קישור ההורדה והצ׳יינג׳לוג האלה, כדי שתמיד תוכל למצוא ולבדוק את הגרסה האחרונה מתוך האפליקציה עצמה.</string>
     <string name="changelog_1_0_3">1.0.3 — שמות מסחריים לתרופות (ריטלין/אטנט, קונצרטה, וייוואנס, אדרל), גרף עם צירים אמיתיים שאפשר לגלול בו בין עבר לעתיד, כיסוי עברית נרחב יותר.</string>
     <string name="changelog_1_0_2">1.0.2 — תוקנה קריסה בהפעלה.</string>
     <string name="changelog_1_0_1">1.0.1 — שיפורי נגישות ותרגום.</string>
     <string name="disclaimer">הערכות בלבד — לא ייעוץ רפואי. חילוף החומרים משתנה מאדם לאדם. אף פעם אל תשתמש בנתוני אלכוהול כדי להחליט אם לנהוג.</string>
+
+    <!-- Hero gauge -->
+    <string name="hero_jitter">מתוך ~%1$d מ״ג אזור עצבנות</string>
+    <string name="hero_effect">%1$d%% מהשיא האחרון</string>
+    <string name="hero_bac">סף חוקי %1$s · אף פעם אל תנהג על סמך זה</string>
+
+    <!-- Insights -->
+    <string name="insights_window">30 הימים האחרונים</string>
+    <string name="insights_empty">עדיין לא נרשמו מנות — רשום כמה והדפוסים שלך יופיעו כאן.</string>
+    <string name="insights_when">מתי אתה נוטל</string>
+    <string name="insights_peak_hours">השעות העמוסות: %1$s</string>
+    <string name="insights_weekly">מקצב שבועי</string>
+    <string name="insights_averages">ממוצעים</string>
+    <string name="insights_per_day">ליום פעיל</string>
+    <string name="insights_per_week">השבוע</string>
+    <string name="insights_first">ראשונה בד״כ</string>
+    <string name="insights_streak">רצף ימים</string>
+    <string name="insights_recent">אחרונות</string>
 
     <string name="mg">מ״ג</string>
     <string name="hours_short">ש׳</string>

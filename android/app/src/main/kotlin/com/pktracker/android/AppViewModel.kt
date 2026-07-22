@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 
 const val H_MS = 3_600_000.0
@@ -75,6 +76,22 @@ data class DashboardState(
     val redoseEligible: Boolean,
 )
 
+class InsightsState(
+    val hasData: Boolean,
+    val hourCounts: IntArray,     // size 24, doses started in each hour of day
+    val dowAvgMg: DoubleArray,    // size 7, Mon..Sun, average daily amount on that weekday
+    val avgPerDay: Double,        // doses per active day
+    val weekMg: Double,           // total amount in the last 7 days
+    val firstDoseMinutes: Int?,   // average minute-of-day of the first dose each day
+    val streakDays: Int,          // consecutive days up to today with at least one dose
+    val totalDoses: Int,          // doses in the 30-day window
+    val peakHours: List<Int>,     // busiest hours, to highlight
+) {
+    companion object {
+        val EMPTY = InsightsState(false, IntArray(24), DoubleArray(7), 0.0, 0.0, null, 0, 0, emptyList())
+    }
+}
+
 fun AppSettings.toProfile(): UserProfile = UserProfile(
     bodyMassKg = bodyMassKg,
     sex = sex,
@@ -112,6 +129,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         combine(doses, settings, nowFlow, simOnFlow) { d, s, now, sim -> compute(d, s, now, sim) }
             .flowOn(Dispatchers.Default)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val insights: StateFlow<InsightsState> =
+        combine(doses, settings, nowFlow) { d, s, now -> computeInsights(d, s.activeSubstanceId, now) }
+            .flowOn(Dispatchers.Default)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), InsightsState.EMPTY)
 
     // ---- actions ------------------------------------------------------------
     fun setActive(id: String) = viewModelScope.launch { store.update { activeSubstance(id) } }
@@ -300,6 +322,50 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             concUnit = sub.concUnit, colorHex = sub.color, windowH = windowH,
         )
     }
+}
+
+// ---- insights ---------------------------------------------------------------
+private fun computeInsights(doses: List<Dose>, subId: String, nowMs: Long): InsightsState {
+    val zone = ZoneId.systemDefault()
+    val today = Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()
+    val windowStart = today.minusDays(29)
+    val rows = doses.asSequence()
+        .filter { it.substanceId == subId }
+        .map { it to Instant.ofEpochMilli(it.takenAtEpochMs).atZone(zone) }
+        .filter { !it.second.toLocalDate().isBefore(windowStart) }
+        .toList()
+    if (rows.isEmpty()) return InsightsState.EMPTY
+
+    val hours = IntArray(24)
+    val byDate = HashMap<LocalDate, Double>()
+    val firstOfDate = HashMap<LocalDate, Int>()
+    for ((dose, zdt) in rows) {
+        hours[zdt.hour]++
+        val date = zdt.toLocalDate()
+        byDate[date] = (byDate[date] ?: 0.0) + dose.amount
+        val minute = zdt.hour * 60 + zdt.minute
+        val prev = firstOfDate[date]
+        if (prev == null || minute < prev) firstOfDate[date] = minute
+    }
+
+    val dowSum = DoubleArray(7); val dowCount = IntArray(7)
+    for ((date, mg) in byDate) {
+        val idx = date.dayOfWeek.value - 1  // Mon=0 .. Sun=6
+        dowSum[idx] += mg; dowCount[idx]++
+    }
+    val dowAvg = DoubleArray(7) { if (dowCount[it] > 0) dowSum[it] / dowCount[it] else 0.0 }
+
+    val distinctDays = byDate.size.coerceAtLeast(1)
+    val avgPerDay = rows.size.toDouble() / distinctDays
+    val weekStart = today.minusDays(6)
+    val weekMg = rows.filter { !it.second.toLocalDate().isBefore(weekStart) }.sumOf { it.first.amount }
+    val firstAvg = if (firstOfDate.isEmpty()) null else firstOfDate.values.average().toInt()
+
+    var streak = 0; var d = today
+    while (byDate.containsKey(d)) { streak++; d = d.minusDays(1) }
+
+    val peak = (0..23).filter { hours[it] > 0 }.sortedByDescending { hours[it] }.take(3)
+    return InsightsState(true, hours, dowAvg, avgPerDay, weekMg, firstAvg, streak, rows.size, peak)
 }
 
 // ---- helpers ----------------------------------------------------------------
