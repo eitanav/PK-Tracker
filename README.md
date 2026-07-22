@@ -12,6 +12,11 @@ population-average model; individual metabolism varies widely.
 
 > 🌐 **Languages:** English · [עברית — מדריך שימוש מלא](README.he.md)
 
+> 📱 **Now on Android too.** A native Kotlin + Jetpack Compose port lives in
+> [`android/`](android/README.md) with the same features and dark style (full
+> Hebrew + RTL). Grab **`PKTracker-android.apk`** from the
+> [Releases](../../releases) (the `android-v…` tag).
+
 ## ⬇️ Install on Windows (no command line)
 
 No Python, no terminal. Four steps:
