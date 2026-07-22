@@ -28,6 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pktracker.android.AppViewModel
 import com.pktracker.android.R
 import com.pktracker.android.ui.SectionCard
+import com.pktracker.android.ui.substanceName
 import com.pktracker.engine.Substances
 import java.time.Instant
 import java.time.ZoneId
@@ -56,7 +57,8 @@ fun HistoryScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(doses.reversed(), key = { it.id }) { d ->
-                    val name = Substances.byId(d.substanceId)?.name ?: d.substanceId
+                    val sub = Substances.byId(d.substanceId)
+                    val name = if (sub != null) substanceName(sub) else d.substanceId
                     SectionCard {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {

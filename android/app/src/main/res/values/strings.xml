@@ -122,5 +122,22 @@
     <string name="legend_solid">solid = so far</string>
     <string name="legend_dashed">dashed = projected</string>
     <string name="now">now</string>
-    <string name="chart_timeline">Timeline chart of blood level and effect, from two hours ago to twelve hours ahead.</string>
+    <string name="chart_timeline">Timeline chart of blood level and effect. Drag or use the arrows to move through past and future.</string>
+    <string name="kg">kg</string>
+
+    <!-- Substance display names (brand-forward) -->
+    <string name="sub_caffeine">Caffeine</string>
+    <string name="sub_methylphenidate">Ritalin / Attent</string>
+    <string name="sub_methylphenidate_er">Concerta</string>
+    <string name="sub_lisdexamfetamine">Vyvanse</string>
+    <string name="sub_mixed_amphetamine_salts">Adderall</string>
+    <string name="sub_amphetamine_xr">Adderall XR</string>
+    <string name="sub_alcohol">Alcohol</string>
+
+    <!-- Graph controls -->
+    <string name="graph_window">Graph window</string>
+    <string name="graph_window_value">%1$d h</string>
+    <string name="graph_pan_back">Show earlier</string>
+    <string name="graph_pan_forward">Show later</string>
+    <string name="graph_now">Recenter on now</string>
 </resources>

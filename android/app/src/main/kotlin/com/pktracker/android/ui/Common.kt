@@ -1,5 +1,6 @@
 package com.pktracker.android.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -13,12 +14,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.pktracker.android.R
 import com.pktracker.android.ui.theme.Accent
 import com.pktracker.android.ui.theme.Blue
 import com.pktracker.android.ui.theme.Danger
 import com.pktracker.android.ui.theme.Good
 import com.pktracker.android.ui.theme.Warn
+import com.pktracker.engine.Substance
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -54,6 +60,22 @@ fun colorForKey(key: String?): Color = when (key) {
     else -> MaterialTheme.colorScheme.onSurface
 }
 
+/** Localised, brand-forward display name for a built-in substance. */
+@Composable
+fun substanceName(sub: Substance): String {
+    val res = when (sub.id) {
+        "caffeine" -> R.string.sub_caffeine
+        "methylphenidate" -> R.string.sub_methylphenidate
+        "methylphenidate_er" -> R.string.sub_methylphenidate_er
+        "lisdexamfetamine" -> R.string.sub_lisdexamfetamine
+        "mixed_amphetamine_salts" -> R.string.sub_mixed_amphetamine_salts
+        "amphetamine_xr" -> R.string.sub_amphetamine_xr
+        "alcohol" -> R.string.sub_alcohol
+        else -> null
+    }
+    return if (res != null) stringResource(res) else sub.name
+}
+
 @Composable
 fun SectionCard(
     title: String? = null,
@@ -62,15 +84,19 @@ fun SectionCard(
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
         modifier = modifier.fillMaxWidth(),
     ) {
         Column(Modifier.padding(16.dp)) {
             if (title != null) {
                 Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall,
+                    title.uppercase(),
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 0.8.sp,
                 )
                 Spacer(Modifier.height(10.dp))
             }

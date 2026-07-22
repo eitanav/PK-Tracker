@@ -84,6 +84,7 @@ data class AppSettings(
     val simOn: Boolean = false,
     val simMg: Int = 90,
     val simInMin: Int = 60,
+    val graphWindowH: Int = 14,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
@@ -106,6 +107,7 @@ class SettingsStore(private val context: Context) {
         val timingMg = intPreferencesKey("timing_mg")
         val simMg = intPreferencesKey("sim_mg")
         val simInMin = intPreferencesKey("sim_in_min")
+        val graphWindowH = intPreferencesKey("graph_window_h")
     }
 
     val flow: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -127,6 +129,7 @@ class SettingsStore(private val context: Context) {
             simOn = false,
             simMg = p[Keys.simMg] ?: 90,
             simInMin = p[Keys.simInMin] ?: 60,
+            graphWindowH = p[Keys.graphWindowH] ?: 14,
         )
     }
 
@@ -153,5 +156,6 @@ class SettingsStore(private val context: Context) {
         fun timingMg(v: Int) { p[Keys.timingMg] = v }
         fun simMg(v: Int) { p[Keys.simMg] = v }
         fun simInMin(v: Int) { p[Keys.simInMin] = v }
+        fun graphWindowH(v: Int) { p[Keys.graphWindowH] = v }
     }
 }

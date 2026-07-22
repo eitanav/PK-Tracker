@@ -51,6 +51,7 @@ class CurveData(
     val simConc: DoubleArray?, val simEffect: DoubleArray?,
     val nowHours: Double, val concTop: Double, val effectTop: Double,
     val concUnit: String, val colorHex: String,
+    val windowH: Double,
 )
 
 data class DashboardState(
@@ -254,9 +255,15 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         tl: SubstanceTimeline, sub: Substance, doses: List<Dose>, profile: UserProfile,
         nowH: Double, nowMs: Long, s: AppSettings, simOn: Boolean,
     ): CurveData {
-        val startH = nowH - 2.0
-        val endH = nowH + 12.0
-        val n = 240
+        // Compute a broad range so the chart can pan through past and future;
+        // the visible slice is `windowH` wide (see TimelineChart).
+        val windowH = s.graphWindowH.toDouble().coerceIn(4.0, 48.0)
+        val subDoses = doses.filter { it.substanceId == sub.id }
+        val firstDoseH = subDoses.minOfOrNull { it.hours }
+        val pastSpan = maxOf(windowH, if (firstDoseH != null) (nowH - firstDoseH) + 1.0 else 2.0)
+        val startH = nowH - minOf(pastSpan, 72.0)
+        val endH = nowH + maxOf(windowH * 1.5, 12.0)
+        val n = ((endH - startH) * 12.0).toInt().coerceIn(240, 900)
         val res = tl.curve(startH, endH, n)
         val concDisp = DoubleArray(n) { res.concentration[it] * sub.concScale }
         val peak = tl.personalPeakEffect(nowH)
@@ -290,7 +297,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             xHours = res.xHours, conc = concDisp, effect = effect,
             simConc = simConc, simEffect = simEffect,
             nowHours = nowH, concTop = concTop, effectTop = effectTop,
-            concUnit = sub.concUnit, colorHex = sub.color,
+            concUnit = sub.concUnit, colorHex = sub.color, windowH = windowH,
         )
     }
 }

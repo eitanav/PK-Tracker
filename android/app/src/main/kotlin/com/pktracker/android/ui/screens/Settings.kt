@@ -100,11 +100,20 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
                 ),
                 settings.language,
             ) { code -> vm.updateSettings { language(code) }; applyLanguage(code) }
+            Spacer(Modifier.height(12.dp))
+            LabeledValue(
+                stringResource(R.string.graph_window),
+                stringResource(R.string.graph_window_value, settings.graphWindowH),
+            )
+            Slider(
+                value = settings.graphWindowH.toFloat(), valueRange = 4f..48f,
+                onValueChange = { vm.updateSettings { graphWindowH(it.roundToInt()) } },
+            )
         }
 
         // Body & calibration
         SectionCard(title = stringResource(R.string.body_calibration)) {
-            LabeledValue(stringResource(R.string.body_mass), "${settings.bodyMassKg.roundToInt()} kg")
+            LabeledValue(stringResource(R.string.body_mass), "${settings.bodyMassKg.roundToInt()} ${stringResource(R.string.kg)}")
             Slider(
                 value = settings.bodyMassKg.toFloat(), valueRange = 40f..150f,
                 onValueChange = { vm.updateSettings { bodyMassKg(it.toDouble()) } },
@@ -118,7 +127,7 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             ) { vm.updateSettings { sex(it) } }
             Spacer(Modifier.height(12.dp))
             LabeledValue(stringResource(R.string.caffeine_half_life),
-                String.format(Locale.US, "%.1f h", settings.caffeineHalfLifeH))
+                "${String.format(Locale.US, "%.1f", settings.caffeineHalfLifeH)} ${stringResource(R.string.hours_short)}")
             Slider(
                 value = settings.caffeineHalfLifeH.toFloat(), valueRange = 1.5f..15f,
                 onValueChange = { vm.updateSettings { caffeineHalfLife((it * 2).roundToInt() / 2.0) } },
@@ -202,7 +211,7 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         SectionCard(title = stringResource(R.string.about)) {
             Text(stringResource(R.string.about_body), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.version, "1.0.2"), style = MaterialTheme.typography.bodySmall,
+            Text(stringResource(R.string.version, "1.0.3"), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall,

@@ -111,5 +111,22 @@
     <string name="legend_solid">מלא = עד עכשיו</string>
     <string name="legend_dashed">מקווקו = תחזית</string>
     <string name="now">עכשיו</string>
-    <string name="chart_timeline">גרף ציר-זמן של הרמה בדם והאפקט, משעתיים אחורה ועד 12 שעות קדימה.</string>
+    <string name="chart_timeline">גרף ציר-זמן של הרמה בדם והאפקט. גרור או השתמש בחיצים כדי לנוע בין עבר לעתיד.</string>
+    <string name="kg">ק״ג</string>
+
+    <!-- שמות תצוגה לחומרים (שמות מסחריים) -->
+    <string name="sub_caffeine">קפאין</string>
+    <string name="sub_methylphenidate">ריטלין / אטנט</string>
+    <string name="sub_methylphenidate_er">קונצרטה</string>
+    <string name="sub_lisdexamfetamine">וייוואנס</string>
+    <string name="sub_mixed_amphetamine_salts">אדרל</string>
+    <string name="sub_amphetamine_xr">אדרל XR</string>
+    <string name="sub_alcohol">אלכוהול</string>
+
+    <!-- בקרות גרף -->
+    <string name="graph_window">חלון הגרף</string>
+    <string name="graph_window_value">%1$d ש׳</string>
+    <string name="graph_pan_back">הצג מוקדם יותר</string>
+    <string name="graph_pan_forward">הצג מאוחר יותר</string>
+    <string name="graph_now">מרכוז על עכשיו</string>
 </resources>

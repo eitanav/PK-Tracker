@@ -20,9 +20,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -36,13 +42,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,6 +64,7 @@ import com.pktracker.android.ui.TimelineChart
 import com.pktracker.android.ui.colorForKey
 import com.pktracker.android.ui.fmtClock
 import com.pktracker.android.ui.sinceLabel
+import com.pktracker.android.ui.substanceName
 import com.pktracker.android.ui.theme.Blue
 import com.pktracker.android.ui.theme.Danger
 import com.pktracker.android.ui.theme.Warn
@@ -86,7 +96,7 @@ fun DashboardScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
                     FilterChip(
                         selected = settings.activeSubstanceId == sub.id,
                         onClick = { vm.setActive(sub.id) },
-                        label = { Text(sub.name) },
+                        label = { Text(substanceName(sub)) },
                     )
                 }
             }
@@ -96,7 +106,7 @@ fun DashboardScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             item { Text(stringResource(R.string.no_doses), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         } else {
             item { StatusCard(s) }
-            item { ChartCard(s, simOn, vm, settings.simMg, settings.simInMin) }
+            item { ChartCard(s, simOn, vm, settings.simMg, settings.simInMin, settings.graphWindowH) }
             item { LogCard(s, vm) }
             if (s.redoseEligible) {
                 item { SleepCard(s) }
@@ -120,7 +130,7 @@ fun DashboardScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
 private fun StatusCard(s: DashboardState) {
     val accent = parseColor(s.substance.color, MaterialTheme.colorScheme.primary)
     SectionCard {
-        Text(s.substance.name, style = MaterialTheme.typography.titleMedium, color = accent, fontWeight = FontWeight.Bold)
+        Text(substanceName(s.substance), style = MaterialTheme.typography.titleMedium, color = accent, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(6.dp))
         val bigColor = if (s.overloadOver) Warn else accent
         if (s.bodyMg != null) {
@@ -186,16 +196,45 @@ private fun actionText(kind: ActionKind, timeMs: Long?): String = when (kind) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ChartCard(s: DashboardState, simOn: Boolean, vm: AppViewModel, simMg: Int, simInMin: Int) {
+private fun ChartCard(s: DashboardState, simOn: Boolean, vm: AppViewModel, simMg: Int, simInMin: Int, graphWindowH: Int) {
+    val curve = s.curve
+    val minC = curve.xHours.first() + curve.windowH / 2.0
+    val maxC = curve.xHours.last() - curve.windowH / 2.0
+    val lo = minOf(minC, maxC)
+    val hi = maxOf(minC, maxC)
+    var centerH by remember(s.substance.id, graphWindowH) {
+        mutableStateOf((curve.nowHours + curve.windowH * 0.15).coerceIn(lo, hi))
+    }
+    fun setCenter(c: Double) { centerH = c.coerceIn(lo, hi) }
+
     SectionCard {
-        TimelineChart(s.curve, Modifier.fillMaxWidth().height(220.dp), stringResource(R.string.chart_timeline))
+        TimelineChart(
+            curve = curve,
+            centerH = centerH,
+            onPan = { setCenter(centerH + it) },
+            modifier = Modifier.fillMaxWidth().height(220.dp),
+            description = stringResource(R.string.chart_timeline),
+        )
         Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             LegendDot(parseColor(s.substance.color, MaterialTheme.colorScheme.primary), stringResource(R.string.blood_level))
             Spacer(Modifier.width(12.dp))
             if (s.effectPct != null) LegendDot(Blue, stringResource(R.string.effect))
+            Spacer(Modifier.weight(1f))
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { setCenter(centerH - curve.windowH * 0.5) }) {
+                        Icon(Icons.Filled.KeyboardArrowLeft, contentDescription = stringResource(R.string.graph_pan_back))
+                    }
+                    IconButton(onClick = { setCenter(curve.nowHours + curve.windowH * 0.15) }) {
+                        Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.graph_now))
+                    }
+                    IconButton(onClick = { setCenter(centerH + curve.windowH * 0.5) }) {
+                        Icon(Icons.Filled.KeyboardArrowRight, contentDescription = stringResource(R.string.graph_pan_forward))
+                    }
+                }
+            }
         }
-        Spacer(Modifier.height(4.dp))
         Text(
             "${stringResource(R.string.legend_solid)} · ${stringResource(R.string.legend_dashed)}",
             style = MaterialTheme.typography.bodySmall,
@@ -285,7 +324,7 @@ private fun LogCard(s: DashboardState, vm: AppViewModel) {
 private fun SleepCard(s: DashboardState) {
     val sleep = s.sleep ?: return
     SectionCard(title = stringResource(R.string.sleep_cutoff)) {
-        val name = s.substance.name.lowercase()
+        val name = substanceName(s.substance)
         if (sleep.feasible && sleep.cutoffMs != null) {
             Text(stringResource(R.string.latest_caffeine, name, fmtClock(sleep.cutoffMs)),
                 color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
