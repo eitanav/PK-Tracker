@@ -202,7 +202,7 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         SectionCard(title = stringResource(R.string.about)) {
             Text(stringResource(R.string.about_body), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.version, "1.0.0"), style = MaterialTheme.typography.bodySmall,
+            Text(stringResource(R.string.version, "1.0.1"), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.disclaimer), style = MaterialTheme.typography.bodySmall,
