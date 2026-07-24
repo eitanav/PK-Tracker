@@ -8,6 +8,7 @@ import com.pktracker.android.data.AppSettings
 import com.pktracker.android.data.DoseEntity
 import com.pktracker.android.data.SettingsStore
 import com.pktracker.android.data.toDose
+import com.pktracker.android.widget.PkWidgetProvider
 import com.pktracker.engine.Dose
 import com.pktracker.engine.Models
 import com.pktracker.engine.Scheduler
@@ -148,14 +149,19 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
                 takenAtEpochMs = taken, updatedAt = now,
             ),
         )
+        PkWidgetProvider.refresh(getApplication<Application>())
     }
 
-    fun deleteDose(id: Long) = viewModelScope.launch { db.doseDao().softDelete(id, System.currentTimeMillis()) }
+    fun deleteDose(id: Long) = viewModelScope.launch {
+        db.doseDao().softDelete(id, System.currentTimeMillis())
+        PkWidgetProvider.refresh(getApplication<Application>())
+    }
 
     fun undoLast(onDone: (Dose?) -> Unit = {}) = viewModelScope.launch {
         val last = db.doseDao().latest()
         if (last != null) db.doseDao().softDelete(last.id, System.currentTimeMillis())
         onDone(last?.toDose())
+        PkWidgetProvider.refresh(getApplication<Application>())
     }
 
     fun setSim(on: Boolean) { simOnFlow.value = on }

@@ -9,6 +9,15 @@ tag `android-vX.Y.Z`, matching `versionName` in `app/build.gradle.kts`. The
 in-app **Settings → About** card links straight to that releases page and
 mirrors this changelog.
 
+## [2.3.0] - 2026-07-24
+
+### Added
+- **Home-screen widget.** Add it to your launcher for the active substance's
+  current in-body level (or concentration), tinted to the substance colour,
+  plus time since your last dose. Tapping opens the app; it refreshes after
+  every dose (and every ~30 min). Built with RemoteViews, reusing the engine
+  + dose log + settings — no PK maths duplicated.
+
 ## [2.2.0] - 2026-07-24
 
 ### Added

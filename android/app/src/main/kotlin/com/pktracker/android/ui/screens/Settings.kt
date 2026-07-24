@@ -247,7 +247,7 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         SectionCard(title = stringResource(R.string.about)) {
             Text(stringResource(R.string.about_body), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.version, "2.2.0"), style = MaterialTheme.typography.bodySmall,
+            Text(stringResource(R.string.version, "2.3.0"), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(10.dp))
             OutlinedButton(onClick = {
@@ -257,7 +257,10 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             Text(stringResource(R.string.whats_new), color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
-            Text(stringResource(R.string.changelog_2_2_0), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.changelog_2_3_0), style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.changelog_2_2_0), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.changelog_2_1_0), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
