@@ -9,6 +9,26 @@ tag `android-vX.Y.Z`, matching `versionName` in `app/build.gradle.kts`. The
 in-app **Settings → About** card links straight to that releases page and
 mirrors this changelog.
 
+## [2.2.0] - 2026-07-24
+
+### Added
+- **Smart reminders** (opt-in, Settings → Smart reminders). Model-timed
+  notifications that only fire when there's a real decision to make:
+  - the **last coffee before your sleep cutoff** ("after HH:MM another
+    coffee may cost you sleep"), once per day;
+  - a **redose nudge** when caffeine drops below your focus zone (never
+    past the sleep cutoff).
+  Quiet 23:00–07:00, throttled, and varied — driven by a WorkManager
+  worker that reads the pharmacokinetic model. Needs the notifications
+  permission (requested when you flip the switch on Android 13+).
+- **Sync-ready dose schema.** Each dose now has a global `uid` and deletes
+  are soft (`deleted` + `updatedAt`), so the log can merge across devices.
+  Room migrated to v2 (additive, backfills uids; existing data preserved).
+
+### Notes
+- Cross-device sync itself (Firestore) is not wired yet — this is the
+  local groundwork. See `TODO.md`.
+
 ## [2.1.0] - 2026-07-22
 
 ### Added

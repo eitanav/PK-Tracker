@@ -1,7 +1,12 @@
 package com.pktracker.android.ui.screens
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +23,9 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.core.content.ContextCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
@@ -188,6 +195,32 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
+        // Reminders
+        SectionCard(title = stringResource(R.string.reminders_title)) {
+            val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+                vm.updateSettings { remindersEnabled(granted) }
+            }
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.reminders_toggle), modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                Switch(checked = settings.remindersEnabled, onCheckedChange = { on ->
+                    if (on) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        } else {
+                            vm.updateSettings { remindersEnabled(true) }
+                        }
+                    } else {
+                        vm.updateSettings { remindersEnabled(false) }
+                    }
+                })
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(stringResource(R.string.reminders_hint), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
         // Data
         SectionCard(title = stringResource(R.string.data)) {
             OutlinedButton(onClick = {
@@ -214,7 +247,7 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         SectionCard(title = stringResource(R.string.about)) {
             Text(stringResource(R.string.about_body), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.version, "2.1.0"), style = MaterialTheme.typography.bodySmall,
+            Text(stringResource(R.string.version, "2.2.0"), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(10.dp))
             OutlinedButton(onClick = {
@@ -224,7 +257,10 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             Text(stringResource(R.string.whats_new), color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
-            Text(stringResource(R.string.changelog_2_1_0), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.changelog_2_2_0), style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.changelog_2_1_0), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.changelog_2_0_0), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)

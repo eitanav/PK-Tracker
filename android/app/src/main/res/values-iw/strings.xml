@@ -103,6 +103,17 @@
     <string name="sensitivity_resistant">עמיד (~100 מ״ג)</string>
     <string name="hours_before_bed">הפסקה לפני השינה</string>
     <string name="sleep_research">מבוסס על מחקרי קפאין/שינה (Drake 2013; SLEEP 2025). לא ייעוץ רפואי.</string>
+    <!-- Reminders -->
+    <string name="reminders_channel">תזכורות חכמות</string>
+    <string name="reminders_channel_desc">נודניקים מבוססי-מודל בזמן הנכון — לא גנריים</string>
+    <string name="reminders_title">תזכורות חכמות</string>
+    <string name="reminders_toggle">הפעל תזכורות חכמות</string>
+    <string name="reminders_hint">נודניקים שקשורים להחלטה אמיתית מהעקומה שלך — הקפה האחרון לפני חתך השינה, מנה חוזרת כשהפוקוס צונח. מתוזמנים לפי המודל, שקטים בלילה, אף פעם לא ספאם גנרי.</string>
+    <string name="reminder_cutoff_title">☕ חלון הקפה הנקי האחרון</string>
+    <string name="reminder_cutoff_body">אחרי %1$s, עוד קפה עלול להישאר בגוף עד השינה ולפגוע בה. אם בא לך עוד אחד היום — עכשיו הרגע.</string>
+    <string name="reminder_redose_title">הפוקוס מתחיל לצנוח</string>
+    <string name="reminder_redose_body">הקפאין שלך בדיוק ירד מתחת לאזור הפוקוס. מנה חוזרת קטנה עכשיו תשמור אותך חד — בלי להעמיס להמשך.</string>
+
     <string name="data">נתונים</string>
     <string name="export">ייצוא יומן מנות</string>
     <string name="export_hint">שיתוף כל המנות כ-CSV — גיבוי, או לגיליון.</string>
@@ -111,6 +122,7 @@
     <string name="version">גרסה %1$s</string>
     <string name="download_latest">הורדת הגרסה האחרונה</string>
     <string name="whats_new">מה חדש</string>
+    <string name="changelog_2_2_0">2.2.0 — תזכורות חכמות (בהצטרפות): נודניקים מתוזמני-מודל כמו הקפה האחרון לפני חתך השינה, או מנה חוזרת כשהפוקוס צונח — אף פעם לא גנרי. בנוסף תשתית לסנכרון בין מכשירים.</string>
     <string name="changelog_2_1_0">2.1.0 — גם לממריצים (ריטלין, קונצרטה, וייוואנס, אדרל) יש עכשיו כרטיס חתך שינה, לפי סף השינה של כל תרופה. בנוסף, הכרטיסים נכנסים באנימציה כשהמסך נבנה.</string>
     <string name="changelog_2_0_0">2.0.0 — עיצוב מחדש גדול: כל חומר צובע עכשיו את כל הדאשבורד בצבע שלו, גייג׳ חי מציג את הרמה הנוכחית, וטאב "תובנות" חדש מראה מתי אתה נוטל, את המקצב השבועי והממוצעים. בנוסף לוגו חדש מבוסס עקומה ואנימציות לאורך כל הדרך.</string>
     <string name="changelog_1_0_4">1.0.4 — נוספו קישור ההורדה והצ׳יינג׳לוג האלה, כדי שתמיד תוכל למצוא ולבדוק את הגרסה האחרונה מתוך האפליקציה עצמה.</string>

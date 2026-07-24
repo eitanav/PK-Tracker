@@ -15,8 +15,8 @@ android {
         applicationId = "com.pktracker.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "2.1.0"
+        versionCode = 8
+        versionName = "2.2.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -73,5 +73,6 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.appcompat)
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     debugImplementation(libs.androidx.ui.tooling)
 }

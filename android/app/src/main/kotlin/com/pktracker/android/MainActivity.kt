@@ -26,6 +26,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -34,12 +35,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.pktracker.android.notify.Reminders
 import com.pktracker.android.ui.LocalAccent
 import com.pktracker.android.ui.PkLogo
 import com.pktracker.android.ui.accentColorFor
@@ -60,6 +63,15 @@ class MainActivity : AppCompatActivity() {
                 "dark" -> true
                 "light" -> false
                 else -> isSystemInDarkTheme()
+            }
+            val context = LocalContext.current
+            LaunchedEffect(settings.remindersEnabled) {
+                if (settings.remindersEnabled) {
+                    Reminders.ensureChannel(context)
+                    Reminders.schedule(context)
+                } else {
+                    Reminders.cancel(context)
+                }
             }
             PKTrackerTheme(darkTheme = dark) {
                 val sub = remember(settings.activeSubstanceId) {

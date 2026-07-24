@@ -3,9 +3,11 @@ package com.pktracker.android.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Dao
@@ -109,6 +111,9 @@ data class AppSettings(
     val simMg: Int = 90,
     val simInMin: Int = 60,
     val graphWindowH: Int = 14,
+    val remindersEnabled: Boolean = false,
+    val reminderLastCutoffMs: Long = 0,
+    val reminderLastRedoseMs: Long = 0,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
@@ -132,6 +137,9 @@ class SettingsStore(private val context: Context) {
         val simMg = intPreferencesKey("sim_mg")
         val simInMin = intPreferencesKey("sim_in_min")
         val graphWindowH = intPreferencesKey("graph_window_h")
+        val remindersEnabled = booleanPreferencesKey("reminders_enabled")
+        val reminderLastCutoffMs = longPreferencesKey("reminder_last_cutoff")
+        val reminderLastRedoseMs = longPreferencesKey("reminder_last_redose")
     }
 
     val flow: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -154,6 +162,9 @@ class SettingsStore(private val context: Context) {
             simMg = p[Keys.simMg] ?: 90,
             simInMin = p[Keys.simInMin] ?: 60,
             graphWindowH = p[Keys.graphWindowH] ?: 14,
+            remindersEnabled = p[Keys.remindersEnabled] ?: false,
+            reminderLastCutoffMs = p[Keys.reminderLastCutoffMs] ?: 0,
+            reminderLastRedoseMs = p[Keys.reminderLastRedoseMs] ?: 0,
         )
     }
 
@@ -181,5 +192,8 @@ class SettingsStore(private val context: Context) {
         fun simMg(v: Int) { p[Keys.simMg] = v }
         fun simInMin(v: Int) { p[Keys.simInMin] = v }
         fun graphWindowH(v: Int) { p[Keys.graphWindowH] = v }
+        fun remindersEnabled(v: Boolean) { p[Keys.remindersEnabled] = v }
+        fun reminderLastCutoffMs(v: Long) { p[Keys.reminderLastCutoffMs] = v }
+        fun reminderLastRedoseMs(v: Long) { p[Keys.reminderLastRedoseMs] = v }
     }
 }

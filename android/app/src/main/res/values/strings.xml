@@ -113,6 +113,17 @@
     <string name="sensitivity_resistant">Resistant (~100 mg)</string>
     <string name="hours_before_bed">Stop before bed</string>
     <string name="sleep_research">Grounded in caffeine/sleep research (Drake 2013; SLEEP 2025). Not medical advice.</string>
+    <!-- Reminders -->
+    <string name="reminders_channel">Smart reminders</string>
+    <string name="reminders_channel_desc">Timely, model-based nudges — never generic</string>
+    <string name="reminders_title">Smart reminders</string>
+    <string name="reminders_toggle">Enable smart reminders</string>
+    <string name="reminders_hint">Nudges tied to a real decision from your own curve — the last coffee before your sleep cutoff, a redose when focus dips. Model-timed, quiet at night, never generic spam.</string>
+    <string name="reminder_cutoff_title">☕ Last clean coffee window</string>
+    <string name="reminder_cutoff_body">After %1$s, another coffee may still be in you at bedtime and cost you sleep. If you want one more today, now\'s the moment.</string>
+    <string name="reminder_redose_title">Focus is starting to dip</string>
+    <string name="reminder_redose_body">Your caffeine just dropped below your focus zone. A small redose now keeps you sharp — without piling on for later.</string>
+
     <string name="data">Data</string>
     <string name="export">Export dose log</string>
     <string name="export_hint">Share every logged dose as CSV — a backup, or for a spreadsheet.</string>
@@ -121,6 +132,7 @@
     <string name="version">Version %1$s</string>
     <string name="download_latest">Download latest release</string>
     <string name="whats_new">What\'s new</string>
+    <string name="changelog_2_2_0">2.2.0 — Smart reminders (opt-in): model-timed nudges like the last coffee before your sleep cutoff, or a redose when focus dips — never generic. Plus groundwork for cross-device sync.</string>
     <string name="changelog_2_1_0">2.1.0 — Stimulants (Ritalin, Concerta, Vyvanse, Adderall) now get a sleep-cutoff card too, based on each drug\'s own threshold. Plus cards now animate in as the screen assembles.</string>
     <string name="changelog_2_0_0">2.0.0 — A big redesign: every substance now themes the whole dashboard in its own colour, a live gauge headlines your current level, and a new Insights tab shows when you have it, your weekly rhythm, and averages. Plus a curve-based logo and animations throughout.</string>
     <string name="changelog_1_0_4">1.0.4 — Added this download link and changelog, so you can always find and check the latest build from inside the app.</string>
