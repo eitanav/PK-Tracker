@@ -25,6 +25,19 @@
             </intent-filter>
         </activity>
 
+        <!-- Home-screen widget for the active substance. -->
+        <receiver
+            android:name=".widget.PkWidgetProvider"
+            android:label="@string/widget_name"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/pk_widget_info" />
+        </receiver>
+
         <!-- Persist the user's in-app language choice across restarts. -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

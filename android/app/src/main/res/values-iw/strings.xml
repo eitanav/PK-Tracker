@@ -172,4 +172,9 @@
     <string name="graph_pan_back">הצג מוקדם יותר</string>
     <string name="graph_pan_forward">הצג מאוחר יותר</string>
     <string name="graph_now">מרכוז על עכשיו</string>
+
+    <!-- ווידג'ט מסך הבית -->
+    <string name="widget_name">רמת PK</string>
+    <string name="widget_since_last">מאז האחרונה: %1$s</string>
+    <string name="widget_no_doses">עדיין אין מנות</string>
 </resources>

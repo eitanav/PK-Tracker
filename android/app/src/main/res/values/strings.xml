@@ -183,4 +183,9 @@
     <string name="graph_pan_back">Show earlier</string>
     <string name="graph_pan_forward">Show later</string>
     <string name="graph_now">Recenter on now</string>
+
+    <!-- Home-screen widget -->
+    <string name="widget_name">PK level</string>
+    <string name="widget_since_last">since last: %1$s</string>
+    <string name="widget_no_doses">No doses yet</string>
 </resources>
