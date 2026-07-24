@@ -18,6 +18,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.Update
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pktracker.engine.Dose
@@ -66,6 +67,13 @@ interface DoseDao {
 
     @Query("SELECT * FROM doses WHERE uid = :uid LIMIT 1")
     suspend fun byUid(uid: String): DoseEntity?
+
+    /** Every row, including soft-deleted ones — the sync layer must see tombstones. */
+    @Query("SELECT * FROM doses")
+    suspend fun allForSync(): List<DoseEntity>
+
+    @Update
+    suspend fun update(dose: DoseEntity)
 }
 
 private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -114,6 +122,7 @@ data class AppSettings(
     val remindersEnabled: Boolean = false,
     val reminderLastCutoffMs: Long = 0,
     val reminderLastRedoseMs: Long = 0,
+    val syncEnabled: Boolean = false,
 )
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore("settings")
@@ -140,6 +149,7 @@ class SettingsStore(private val context: Context) {
         val remindersEnabled = booleanPreferencesKey("reminders_enabled")
         val reminderLastCutoffMs = longPreferencesKey("reminder_last_cutoff")
         val reminderLastRedoseMs = longPreferencesKey("reminder_last_redose")
+        val syncEnabled = booleanPreferencesKey("sync_enabled")
     }
 
     val flow: Flow<AppSettings> = context.dataStore.data.map { p ->
@@ -165,6 +175,7 @@ class SettingsStore(private val context: Context) {
             remindersEnabled = p[Keys.remindersEnabled] ?: false,
             reminderLastCutoffMs = p[Keys.reminderLastCutoffMs] ?: 0,
             reminderLastRedoseMs = p[Keys.reminderLastRedoseMs] ?: 0,
+            syncEnabled = p[Keys.syncEnabled] ?: false,
         )
     }
 
@@ -195,5 +206,6 @@ class SettingsStore(private val context: Context) {
         fun remindersEnabled(v: Boolean) { p[Keys.remindersEnabled] = v }
         fun reminderLastCutoffMs(v: Long) { p[Keys.reminderLastCutoffMs] = v }
         fun reminderLastRedoseMs(v: Long) { p[Keys.reminderLastRedoseMs] = v }
+        fun syncEnabled(v: Boolean) { p[Keys.syncEnabled] = v }
     }
 }

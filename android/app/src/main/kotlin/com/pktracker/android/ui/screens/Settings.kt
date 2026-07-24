@@ -221,6 +221,17 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
+        // Cloud sync
+        SectionCard(title = stringResource(R.string.sync_title)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.sync_toggle), modifier = Modifier.weight(1f), fontWeight = FontWeight.SemiBold)
+                Switch(checked = settings.syncEnabled, onCheckedChange = { on -> vm.updateSettings { syncEnabled(on) } })
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(stringResource(R.string.sync_hint), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
         // Data
         SectionCard(title = stringResource(R.string.data)) {
             OutlinedButton(onClick = {
@@ -247,7 +258,7 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         SectionCard(title = stringResource(R.string.about)) {
             Text(stringResource(R.string.about_body), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.version, "2.3.0"), style = MaterialTheme.typography.bodySmall,
+            Text(stringResource(R.string.version, "2.4.0"), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(10.dp))
             OutlinedButton(onClick = {
@@ -257,7 +268,10 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             Text(stringResource(R.string.whats_new), color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
-            Text(stringResource(R.string.changelog_2_3_0), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.changelog_2_4_0), style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.changelog_2_3_0), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.changelog_2_2_0), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)

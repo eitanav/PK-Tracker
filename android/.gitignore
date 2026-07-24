@@ -5,3 +5,5 @@ build/
 .kotlin/
 captures/
 .cxx/
+# Firebase config — injected in CI from a secret, never committed (public repo)
+app/google-services.json

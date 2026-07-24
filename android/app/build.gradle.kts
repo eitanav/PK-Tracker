@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    id("com.google.gms.google-services") version "4.4.2"
 }
 
 android {
@@ -15,14 +16,15 @@ android {
         applicationId = "com.pktracker.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "2.3.0"
+        versionCode = 10
+        versionName = "2.4.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
+            // No applicationIdSuffix: debug shares the com.pktracker.android
+            // package registered in Firebase, so google-services.json matches.
         }
         release {
             isMinifyEnabled = false
@@ -74,5 +76,10 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.androidx.appcompat)
     implementation("androidx.work:work-runtime-ktx:2.9.1")
+    // Firebase — cross-device sync (Firestore) + anonymous auth
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-auth")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
     debugImplementation(libs.androidx.ui.tooling)
 }

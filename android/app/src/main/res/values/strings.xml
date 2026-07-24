@@ -124,6 +124,11 @@
     <string name="reminder_redose_title">Focus is starting to dip</string>
     <string name="reminder_redose_body">Your caffeine just dropped below your focus zone. A small redose now keeps you sharp — without piling on for later.</string>
 
+    <!-- Cloud sync -->
+    <string name="sync_title">Cloud sync</string>
+    <string name="sync_toggle">Sync across my devices</string>
+    <string name="sync_hint">Keep your dose log in sync across your phone and other devices through your private Firebase account. Off by default; your data stays yours.</string>
+
     <string name="data">Data</string>
     <string name="export">Export dose log</string>
     <string name="export_hint">Share every logged dose as CSV — a backup, or for a spreadsheet.</string>
@@ -132,6 +137,7 @@
     <string name="version">Version %1$s</string>
     <string name="download_latest">Download latest release</string>
     <string name="whats_new">What\'s new</string>
+    <string name="changelog_2_4_0">2.4.0 — Cloud sync (opt-in, Settings → Cloud sync): your dose log now syncs across your devices through your private Firebase account, with anonymous sign-in.</string>
     <string name="changelog_2_3_0">2.3.0 — Home-screen widget: shows your active substance\'s current level in its own colour, plus time since your last dose. Tap to open; refreshes after every dose.</string>
     <string name="changelog_2_2_0">2.2.0 — Smart reminders (opt-in): model-timed nudges like the last coffee before your sleep cutoff, or a redose when focus dips — never generic. Plus groundwork for cross-device sync.</string>
     <string name="changelog_2_1_0">2.1.0 — Stimulants (Ritalin, Concerta, Vyvanse, Adderall) now get a sleep-cutoff card too, based on each drug\'s own threshold. Plus cards now animate in as the screen assembles.</string>

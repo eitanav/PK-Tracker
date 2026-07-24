@@ -9,6 +9,24 @@ tag `android-vX.Y.Z`, matching `versionName` in `app/build.gradle.kts`. The
 in-app **Settings → About** card links straight to that releases page and
 mirrors this changelog.
 
+## [2.4.0] - 2026-07-24
+
+### Added
+- **Cloud sync** (opt-in, Settings → Cloud sync). The dose log now syncs
+  across devices through the user's private Firebase project: anonymous
+  Firebase Auth + a Firestore collection at `users/{uid}/doses/{doseUid}`.
+  Merge is last-write-wins by `updatedAt` and honours soft-deletes, so the
+  same log converges everywhere without duplicates or resurrected rows.
+  A Google sign-in can be linked to the same uid later.
+
+### Changed
+- **Debug builds no longer use the `.debug` applicationId suffix** — the
+  package is now `com.pktracker.android` everywhere, matching the Firebase
+  registration. ⚠️ One-time effect: the new build installs as a fresh app,
+  so re-enable Cloud sync to pull your log back from the cloud.
+- CI injects `google-services.json` from a repository secret
+  (`GOOGLE_SERVICES_JSON`); it is never committed to the public repo.
+
 ## [2.3.0] - 2026-07-24
 
 ### Added

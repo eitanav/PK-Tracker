@@ -43,6 +43,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.pktracker.android.notify.Reminders
+import com.pktracker.android.sync.CloudSync
 import com.pktracker.android.ui.LocalAccent
 import com.pktracker.android.ui.PkLogo
 import com.pktracker.android.ui.accentColorFor
@@ -72,6 +73,9 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Reminders.cancel(context)
                 }
+            }
+            LaunchedEffect(settings.syncEnabled) {
+                if (settings.syncEnabled) CloudSync.start(context) else CloudSync.stop()
             }
             PKTrackerTheme(darkTheme = dark) {
                 val sub = remember(settings.activeSubstanceId) {
