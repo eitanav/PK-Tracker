@@ -26,3 +26,6 @@ pk_tracker/data/*.local.json
 *.swp
 .idea/
 .vscode/
+
+# Claude Code (agent worktrees + local session state)
+.claude/
