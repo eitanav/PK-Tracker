@@ -1,6 +1,9 @@
 package com.pktracker.android.ui
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
@@ -12,8 +15,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -74,6 +83,20 @@ fun substanceName(sub: Substance): String {
         else -> null
     }
     return if (res != null) stringResource(res) else sub.name
+}
+
+/**
+ * Fades and lifts its content in when it first appears, staggered by [index]
+ * so a screen's cards assemble in sequence rather than snapping in at once.
+ */
+@Composable
+fun EntranceItem(index: Int, content: @Composable () -> Unit) {
+    var shown by remember { mutableStateOf(false) }
+    val delay = (index * 55).coerceAtMost(440)
+    val alpha by animateFloatAsState(if (shown) 1f else 0f, tween(360, delayMillis = delay), label = "entranceAlpha")
+    val ty by animateFloatAsState(if (shown) 0f else 26f, tween(400, delayMillis = delay), label = "entranceY")
+    LaunchedEffect(Unit) { shown = true }
+    Box(Modifier.graphicsLayer { this.alpha = alpha; translationY = ty }) { content() }
 }
 
 @Composable

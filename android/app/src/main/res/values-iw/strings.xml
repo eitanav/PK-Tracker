@@ -43,6 +43,10 @@
     <string name="sleep_flat">חתך קבוע %1$d שעות לפני השינה ב-%2$s.</string>
     <string name="sleep_config_mg">שינה %1$s · יעד ≤ %2$d מ״ג · שינוי בהגדרות</string>
     <string name="sleep_config_hours">שינה %1$s · הפסקה %2$d שעות לפני · שינוי בהגדרות</string>
+    <string name="sleep_latest">🌙 מנת %1$s אחרונה: %2$s</string>
+    <string name="sleep_threshold_detail">מאוחר מזה, %1$s עלול עדיין להיות גבוה מספיק ב-%2$s כדי להפריע לשינה שלך.</string>
+    <string name="sleep_none">🌙 ותר על %1$s עכשיו כדי לישון טוב</string>
+    <string name="sleep_config_threshold">שינה %1$s · לפי סף השינה של החומר · שינוי בהגדרות</string>
 
     <string name="perfect_timing">🎯 תזמון מושלם</string>
     <string name="be_sharp_at">להיות חד ב-</string>
@@ -107,6 +111,7 @@
     <string name="version">גרסה %1$s</string>
     <string name="download_latest">הורדת הגרסה האחרונה</string>
     <string name="whats_new">מה חדש</string>
+    <string name="changelog_2_1_0">2.1.0 — גם לממריצים (ריטלין, קונצרטה, וייוואנס, אדרל) יש עכשיו כרטיס חתך שינה, לפי סף השינה של כל תרופה. בנוסף, הכרטיסים נכנסים באנימציה כשהמסך נבנה.</string>
     <string name="changelog_2_0_0">2.0.0 — עיצוב מחדש גדול: כל חומר צובע עכשיו את כל הדאשבורד בצבע שלו, גייג׳ חי מציג את הרמה הנוכחית, וטאב "תובנות" חדש מראה מתי אתה נוטל, את המקצב השבועי והממוצעים. בנוסף לוגו חדש מבוסס עקומה ואנימציות לאורך כל הדרך.</string>
     <string name="changelog_1_0_4">1.0.4 — נוספו קישור ההורדה והצ׳יינג׳לוג האלה, כדי שתמיד תוכל למצוא ולבדוק את הגרסה האחרונה מתוך האפליקציה עצמה.</string>
     <string name="changelog_1_0_3">1.0.3 — שמות מסחריים לתרופות (ריטלין/אטנט, קונצרטה, וייוואנס, אדרל), גרף עם צירים אמיתיים שאפשר לגלול בו בין עבר לעתיד, כיסוי עברית נרחב יותר.</string>

@@ -172,7 +172,10 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val projectedPeakMs = forwardPeakMs(tl, nowH)
         val overload = Scheduler.overloadInfo(tl, nowH)
 
-        val sleep = if (sub.redoseEligible) computeSleep(tl, sub, profile, s, nowMs, nowH) else null
+        // Caffeine drives the full mg/hours cutoff; stimulants with a sleep
+        // threshold get a threshold-based "latest dose" cutoff too.
+        val supportsSleep = !sub.isAlcohol && sub.ka != null && (sub.redoseEligible || sub.sleepThreshold != null)
+        val sleep = if (supportsSleep) computeSleep(tl, sub, profile, s, nowMs, nowH) else null
         val timing = if (sub.redoseEligible) computeTiming(tl, sub, s, nowMs, nowH, sleep) else null
         val alcohol = if (sub.isAlcohol) computeAlcohol(tl, nowH) else null
         val nextAction = computeNextAction(tl, sub, nowH)
@@ -202,6 +205,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     ): SleepState {
         val bedtimeMs = nextTimeMs(nowMs, s.bedtime)
         val bedtimeH = bedtimeMs / H_MS
+        val vol = sub.volumeLiters(profile.bodyMassKg)
+
+        // Stimulants: use the substance's own sleep threshold (a concentration),
+        // not the caffeine mg target — the latest dose that clears by bedtime.
+        if (!sub.redoseEligible) {
+            val res = Scheduler.sleepCutoff(tl, nowH, bedtimeH)
+            return SleepState(
+                feasible = res.feasible,
+                cutoffMs = res.cutoffAtHours?.let { (it * H_MS).toLong() },
+                bedtimeMs = bedtimeMs, mode = "threshold",
+                targetMg = 0, hours = s.sleepHours,
+                existingMg = res.existingAtBedtime * vol, overAlready = false,
+            )
+        }
+
         val res = if (s.sleepMode == "hours") {
             Scheduler.sleepCutoffHours(tl, nowH, bedtimeH, s.sleepHours.toDouble())
         } else {

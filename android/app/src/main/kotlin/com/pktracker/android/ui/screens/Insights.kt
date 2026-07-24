@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pktracker.android.AppViewModel
 import com.pktracker.android.InsightsState
 import com.pktracker.android.R
+import com.pktracker.android.ui.EntranceItem
 import com.pktracker.android.ui.LocalAccent
 import com.pktracker.android.ui.SectionCard
 import com.pktracker.android.ui.substanceName
@@ -85,12 +86,12 @@ fun InsightsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
                 SectionCard { Text(stringResource(R.string.insights_empty), color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
         } else {
-            item { WhenCard(ins, accent, grow) }
-            item { WeeklyCard(ins, accent, grow) }
-            item { AveragesCard(ins, sub.unit) }
+            item { EntranceItem(0) { WhenCard(ins, accent, grow) } }
+            item { EntranceItem(1) { WeeklyCard(ins, accent, grow) } }
+            item { EntranceItem(2) { AveragesCard(ins, sub.unit) } }
         }
 
-        item { RecentCard(doses, vm) }
+        item { EntranceItem(3) { RecentCard(doses, vm) } }
         item { Spacer(Modifier.height(8.dp)) }
     }
 }

@@ -65,6 +65,7 @@ import com.pktracker.android.ActionKind
 import com.pktracker.android.AppViewModel
 import com.pktracker.android.DashboardState
 import com.pktracker.android.R
+import com.pktracker.android.ui.EntranceItem
 import com.pktracker.android.ui.Gauge
 import com.pktracker.android.ui.LocalAccent
 import com.pktracker.android.ui.SectionCard
@@ -114,14 +115,12 @@ fun DashboardScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         if (s == null) {
             item { Text(stringResource(R.string.no_doses), color = MaterialTheme.colorScheme.onSurfaceVariant) }
         } else {
-            item { StatusCard(s) }
-            item { ChartCard(s, simOn, vm, settings.simMg, settings.simInMin, settings.graphWindowH) }
-            item { LogCard(s, vm) }
-            if (s.redoseEligible) {
-                item { SleepCard(s) }
-                item { TimingCard(s, vm) }
-            }
-            if (s.alcohol != null) item { AlcoholCard(s) }
+            item { EntranceItem(0) { StatusCard(s) } }
+            item { EntranceItem(1) { ChartCard(s, simOn, vm, settings.simMg, settings.simInMin, settings.graphWindowH) } }
+            item { EntranceItem(2) { LogCard(s, vm) } }
+            if (s.sleep != null) item { EntranceItem(3) { SleepCard(s) } }
+            if (s.redoseEligible) item { EntranceItem(4) { TimingCard(s, vm) } }
+            if (s.alcohol != null) item { EntranceItem(5) { AlcoholCard(s) } }
             item {
                 Text(
                     stringResource(R.string.disclaimer),
@@ -371,8 +370,26 @@ private fun LogCard(s: DashboardState, vm: AppViewModel) {
 @Composable
 private fun SleepCard(s: DashboardState) {
     val sleep = s.sleep ?: return
+    val name = substanceName(s.substance)
+    if (sleep.mode == "threshold") {
+        SectionCard(title = stringResource(R.string.sleep_cutoff)) {
+            if (sleep.feasible && sleep.cutoffMs != null) {
+                Text(stringResource(R.string.sleep_latest, name, fmtClock(sleep.cutoffMs)),
+                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(4.dp))
+                Text(stringResource(R.string.sleep_threshold_detail, name, fmtClock(sleep.bedtimeMs)),
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                Text(stringResource(R.string.sleep_none, name),
+                    color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.sleep_config_threshold, fmtClock(sleep.bedtimeMs)),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        return
+    }
     SectionCard(title = stringResource(R.string.sleep_cutoff)) {
-        val name = substanceName(s.substance)
         if (sleep.feasible && sleep.cutoffMs != null) {
             Text(stringResource(R.string.latest_caffeine, name, fmtClock(sleep.cutoffMs)),
                 color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)

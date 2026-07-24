@@ -48,6 +48,10 @@
     <string name="sleep_flat">A flat cutoff %1$d h before your %2$s bedtime.</string>
     <string name="sleep_config_mg">Bedtime %1$s · target ≤ %2$d mg by bed · change in Settings</string>
     <string name="sleep_config_hours">Bedtime %1$s · stop %2$d h before · change in Settings</string>
+    <string name="sleep_latest">🌙 Latest %1$s dose: %2$s</string>
+    <string name="sleep_threshold_detail">Later than this and %1$s may still be high enough at %2$s to disturb your sleep.</string>
+    <string name="sleep_none">🌙 Skip %1$s now for a good night\'s sleep</string>
+    <string name="sleep_config_threshold">Bedtime %1$s · based on this substance\'s sleep threshold · change in Settings</string>
 
     <!-- Perfect timing -->
     <string name="perfect_timing">🎯 Perfect timing</string>
@@ -117,6 +121,7 @@
     <string name="version">Version %1$s</string>
     <string name="download_latest">Download latest release</string>
     <string name="whats_new">What\'s new</string>
+    <string name="changelog_2_1_0">2.1.0 — Stimulants (Ritalin, Concerta, Vyvanse, Adderall) now get a sleep-cutoff card too, based on each drug\'s own threshold. Plus cards now animate in as the screen assembles.</string>
     <string name="changelog_2_0_0">2.0.0 — A big redesign: every substance now themes the whole dashboard in its own colour, a live gauge headlines your current level, and a new Insights tab shows when you have it, your weekly rhythm, and averages. Plus a curve-based logo and animations throughout.</string>
     <string name="changelog_1_0_4">1.0.4 — Added this download link and changelog, so you can always find and check the latest build from inside the app.</string>
     <string name="changelog_1_0_3">1.0.3 — Brand-name drug labels (Ritalin/Attent, Concerta, Vyvanse, Adderall), a chart with real axes you can pan through past and future, more Hebrew coverage.</string>

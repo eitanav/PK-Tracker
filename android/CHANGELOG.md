@@ -9,6 +9,15 @@ tag `android-vX.Y.Z`, matching `versionName` in `app/build.gradle.kts`. The
 in-app **Settings → About** card links straight to that releases page and
 mirrors this changelog.
 
+## [2.1.0] - 2026-07-22
+
+### Added
+- **Sleep cutoff for stimulants.** Ritalin/Attent, Concerta, Vyvanse and
+  Adderall now show a sleep-cutoff card — the latest dose that clears below
+  the drug's own sleep threshold by bedtime — not just caffeine.
+- **Entrance animations.** Dashboard and Insights cards fade and lift in,
+  staggered, as each screen assembles.
+
 ## [2.0.0] - 2026-07-22
 
 ### Added
