@@ -139,15 +139,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun setActive(id: String) = viewModelScope.launch { store.update { activeSubstance(id) } }
 
     fun logDose(sub: Substance, amount: Double, minAgo: Int) = viewModelScope.launch {
-        val taken = System.currentTimeMillis() - minAgo * 60_000L
-        db.doseDao().insert(DoseEntity(substanceId = sub.id, amount = amount, unit = sub.unit, takenAtEpochMs = taken))
+        val now = System.currentTimeMillis()
+        val taken = now - minAgo * 60_000L
+        db.doseDao().insert(
+            DoseEntity(
+                uid = java.util.UUID.randomUUID().toString(),
+                substanceId = sub.id, amount = amount, unit = sub.unit,
+                takenAtEpochMs = taken, updatedAt = now,
+            ),
+        )
     }
 
-    fun deleteDose(id: Long) = viewModelScope.launch { db.doseDao().deleteById(id) }
+    fun deleteDose(id: Long) = viewModelScope.launch { db.doseDao().softDelete(id, System.currentTimeMillis()) }
 
     fun undoLast(onDone: (Dose?) -> Unit = {}) = viewModelScope.launch {
         val last = db.doseDao().latest()
-        if (last != null) db.doseDao().deleteById(last.id)
+        if (last != null) db.doseDao().softDelete(last.id, System.currentTimeMillis())
         onDone(last?.toDose())
     }
 

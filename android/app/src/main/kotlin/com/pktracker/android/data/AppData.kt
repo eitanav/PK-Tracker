@@ -16,42 +16,66 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pktracker.engine.Dose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 // ---- Room: the dose log -----------------------------------------------------
+// [uid] is a globally unique id, and deletes are soft ([deleted] + [updatedAt]),
+// so the log can be merged across devices without duplicates or resurrected
+// rows. This is the local half of cross-device sync.
 @Entity(tableName = "doses")
 data class DoseEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val uid: String = "",
     val substanceId: String,
     val amount: Double,
     val unit: String,
     val takenAtEpochMs: Long,
     val note: String = "",
+    val deleted: Boolean = false,
+    val updatedAt: Long = 0,
 )
 
-fun DoseEntity.toDose(): Dose = Dose(substanceId, amount, unit, takenAtEpochMs, note, id)
+fun DoseEntity.toDose(): Dose = Dose(substanceId, amount, unit, takenAtEpochMs, note, id, uid)
 
 @Dao
 interface DoseDao {
-    @Query("SELECT * FROM doses ORDER BY takenAtEpochMs")
+    @Query("SELECT * FROM doses WHERE deleted = 0 ORDER BY takenAtEpochMs")
     fun observeAll(): Flow<List<DoseEntity>>
 
     @Insert
     suspend fun insert(dose: DoseEntity): Long
 
-    @Query("DELETE FROM doses WHERE id = :id")
-    suspend fun deleteById(id: Long)
+    @Query("UPDATE doses SET deleted = 1, updatedAt = :now WHERE id = :id")
+    suspend fun softDelete(id: Long, now: Long)
 
-    @Query("SELECT * FROM doses ORDER BY id DESC LIMIT 1")
+    @Query("SELECT * FROM doses WHERE deleted = 0 ORDER BY id DESC LIMIT 1")
     suspend fun latest(): DoseEntity?
 
-    @Query("SELECT * FROM doses ORDER BY takenAtEpochMs")
+    @Query("SELECT * FROM doses WHERE deleted = 0 ORDER BY takenAtEpochMs")
     suspend fun allOnce(): List<DoseEntity>
+
+    // ---- sync surface (used by the cross-device sync layer) ----
+    @Query("SELECT * FROM doses WHERE updatedAt > :since ORDER BY updatedAt")
+    suspend fun changedSince(since: Long): List<DoseEntity>
+
+    @Query("SELECT * FROM doses WHERE uid = :uid LIMIT 1")
+    suspend fun byUid(uid: String): DoseEntity?
 }
 
-@Database(entities = [DoseEntity::class], version = 1, exportSchema = false)
+private val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE doses ADD COLUMN uid TEXT NOT NULL DEFAULT ''")
+        db.execSQL("ALTER TABLE doses ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("ALTER TABLE doses ADD COLUMN updatedAt INTEGER NOT NULL DEFAULT 0")
+        db.execSQL("UPDATE doses SET uid = 'legacy-' || id WHERE uid = ''")
+    }
+}
+
+@Database(entities = [DoseEntity::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun doseDao(): DoseDao
 
@@ -60,7 +84,7 @@ abstract class AppDatabase : RoomDatabase() {
         fun get(context: Context): AppDatabase = instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(
                 context.applicationContext, AppDatabase::class.java, "pk_tracker.db",
-            ).build().also { instance = it }
+            ).addMigrations(MIGRATION_1_2).build().also { instance = it }
         }
     }
 }

@@ -48,7 +48,8 @@ data class Substance(
     fun volumeLiters(massKg: Double): Double = (vLPerKg ?: 0.0) * massKg
 }
 
-/** A logged dose. [takenAtEpochMs] is Unix time in milliseconds. */
+/** A logged dose. [takenAtEpochMs] is Unix time in milliseconds. [uid] is a
+ *  globally unique id (stable across devices) used for cross-device sync. */
 data class Dose(
     val substanceId: String,
     val amount: Double,
@@ -56,6 +57,7 @@ data class Dose(
     val takenAtEpochMs: Long,
     val note: String = "",
     val id: Long = 0,
+    val uid: String = "",
 ) {
     val hours: Double get() = takenAtEpochMs / 3_600_000.0
 }
