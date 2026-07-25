@@ -28,7 +28,10 @@ import androidx.compose.material3.Text
 import androidx.core.content.ContextCompat
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +42,8 @@ import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.pktracker.android.AppViewModel
 import com.pktracker.android.R
+import com.pktracker.android.sync.CloudSync
+import com.pktracker.android.sync.GoogleAuth
 import com.pktracker.android.ui.SectionCard
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -230,6 +235,36 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             Spacer(Modifier.height(6.dp))
             Text(stringResource(R.string.sync_hint), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            if (settings.syncEnabled) {
+                Spacer(Modifier.height(12.dp))
+                var email by remember { mutableStateOf(GoogleAuth.currentEmail()) }
+                val googleLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                    scope.launch {
+                        val token = GoogleAuth.idTokenFrom(result.data)
+                        if (token != null) {
+                            email = GoogleAuth.signInWithIdToken(token)
+                            CloudSync.stop()
+                            CloudSync.start(context)
+                        }
+                    }
+                }
+                val e = email
+                if (e != null) {
+                    Text(stringResource(R.string.signed_in_as, e), style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(6.dp))
+                    OutlinedButton(onClick = {
+                        GoogleAuth.signOut(context)
+                        email = null
+                        CloudSync.stop()
+                        CloudSync.start(context)
+                    }) { Text(stringResource(R.string.sign_out)) }
+                } else {
+                    OutlinedButton(onClick = { googleLauncher.launch(GoogleAuth.signInIntent(context)) }) {
+                        Text(stringResource(R.string.sign_in_google))
+                    }
+                }
+            }
         }
 
         // Data
@@ -258,7 +293,7 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
         SectionCard(title = stringResource(R.string.about)) {
             Text(stringResource(R.string.about_body), style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.version, "2.4.0"), style = MaterialTheme.typography.bodySmall,
+            Text(stringResource(R.string.version, "2.5.0"), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(10.dp))
             OutlinedButton(onClick = {
@@ -268,7 +303,10 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             Text(stringResource(R.string.whats_new), color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
-            Text(stringResource(R.string.changelog_2_4_0), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.changelog_2_5_0), style = MaterialTheme.typography.bodySmall)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.changelog_2_4_0), style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.changelog_2_3_0), style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)

@@ -118,6 +118,9 @@
     <string name="sync_title">סנכרון ענן</string>
     <string name="sync_toggle">סנכרן בין המכשירים שלי</string>
     <string name="sync_hint">שומר את יומן המנות מסונכרן בין הטלפון למכשירים אחרים, דרך חשבון ה-Firebase הפרטי שלך. כבוי כברירת מחדל; הנתונים נשארים שלך.</string>
+    <string name="sign_in_google">התחבר עם Google</string>
+    <string name="signed_in_as">מחובר כ-%1$s</string>
+    <string name="sign_out">התנתק</string>
 
     <string name="data">נתונים</string>
     <string name="export">ייצוא יומן מנות</string>
@@ -127,6 +130,7 @@
     <string name="version">גרסה %1$s</string>
     <string name="download_latest">הורדת הגרסה האחרונה</string>
     <string name="whats_new">מה חדש</string>
+    <string name="changelog_2_5_0">2.5.0 — התחברות עם Google (הגדרות ← סנכרון ענן): קשר את החשבון האנונימי לזהות ה-Google שלך, כדי שהיומן יעקוב אחריך בין מכשירים והתקנות מחדש.</string>
     <string name="changelog_2_4_0">2.4.0 — סנכרון ענן (בהצטרפות, הגדרות ← סנכרון ענן): יומן המנות מסונכרן עכשיו בין המכשירים שלך דרך חשבון Firebase פרטי, עם התחברות אנונימית.</string>
     <string name="changelog_2_3_0">2.3.0 — ווידג׳ט למסך הבית: מציג את הרמה הנוכחית של החומר הפעיל בצבע שלו, וזמן מאז המנה האחרונה. לחיצה פותחת את האפליקציה; מתעדכן אחרי כל מנה.</string>
     <string name="changelog_2_2_0">2.2.0 — תזכורות חכמות (בהצטרפות): נודניקים מתוזמני-מודל כמו הקפה האחרון לפני חתך השינה, או מנה חוזרת כשהפוקוס צונח — אף פעם לא גנרי. בנוסף תשתית לסנכרון בין מכשירים.</string>

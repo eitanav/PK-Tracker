@@ -9,6 +9,21 @@ tag `android-vX.Y.Z`, matching `versionName` in `app/build.gradle.kts`. The
 in-app **Settings → About** card links straight to that releases page and
 mirrors this changelog.
 
+## [2.5.0] - 2026-07-24
+
+### Added
+- **Sign in with Google** (Settings → Cloud sync, shown when sync is on).
+  Links the anonymous Firebase account to a Google identity via
+  `linkWithCredential`, so nothing logged beforehand is lost; if the Google
+  account is already a Firebase user (another device), it signs into that one
+  instead. Now the log follows you across devices and reinstalls, not just a
+  single install. Uses the classic Google Sign-In (`play-services-auth`).
+
+### Requires
+- `google-services.json` re-downloaded **after** enabling Google sign-in in
+  Firebase (so it carries the web client id / `default_web_client_id`), and
+  the `GOOGLE_SERVICES_JSON` repo secret updated with it.
+
 ## [2.4.0] - 2026-07-24
 
 ### Added

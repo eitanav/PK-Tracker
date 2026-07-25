@@ -16,8 +16,8 @@ android {
         applicationId = "com.pktracker.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 10
-        versionName = "2.4.0"
+        versionCode = 11
+        versionName = "2.5.0"
         vectorDrawables { useSupportLibrary = true }
     }
 
@@ -80,6 +80,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
     debugImplementation(libs.androidx.ui.tooling)
 }
