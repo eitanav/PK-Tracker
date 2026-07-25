@@ -133,12 +133,19 @@ class TimelinePlot(pg.PlotWidget):
         self._hover_label.hide()
         self.vb2.setYRange(0, 105, padding=0)   # reset; _grow_effect_axis expands it
 
-    def set_normalized_y_ranges(self, concentration, effect_pct=None):
-        """Normalize vertical scale after every redraw and lock mouse panning to X."""
+    def set_normalized_y_ranges(self, concentration, effect_pct=None, fallback_top=1.0):
+        """Normalize vertical scale after every redraw and lock mouse panning to X.
+
+        ``fallback_top`` is the axis top used when there is nothing to show, and
+        the floor below which the axis will not shrink. It must be given in the
+        substance's own concentration unit: alcohol runs in hundredths of a g/dL,
+        so the mg/L-sized default would flatten a whole evening's BAC curve into
+        the bottom sliver of the plot.
+        """
         conc = np.asarray(concentration, float)
-        c_top = 1.0
+        c_top = fallback_top
         if conc.size and np.isfinite(conc).any():
-            c_top = max(1.0, float(np.nanmax(conc)) * 1.15)
+            c_top = max(fallback_top, float(np.nanmax(conc)) * 1.15)
         self.p1.setYRange(0, c_top, padding=0)
 
         e_top = 105.0

@@ -704,7 +704,14 @@ class MainWindow(QMainWindow):
             y_norm_conc = np.maximum(y_norm_conc, sim_conc)
 
         self.plot.set_hover_data(res.x, hover_series)
-        self.plot.set_normalized_y_ranges(y_norm_conc, y_norm_eff)
+        # Alcohol is plotted in g/dL, two orders of magnitude below the mg/L the
+        # default assumes; scale the empty-axis top to the legal limit so a BAC
+        # curve fills the plot instead of hugging the bottom.
+        fallback_top = (
+            max(self.controller.profile.legal_bac_limit, 0.02) * 1.5
+            if sub.is_alcohol else 1.0
+        )
+        self.plot.set_normalized_y_ranges(y_norm_conc, y_norm_eff, fallback_top)
         self.plot.set_left_label(sub.conc_unit)
 
         # Keep the legend in step with what is actually drawn.
