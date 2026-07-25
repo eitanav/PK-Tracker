@@ -21,6 +21,10 @@ htmlcov/
 *.db
 pk_tracker/data/*.local.json
 
+# Sync credentials — project keys and OAuth tokens. Never commit (public repo).
+firebase.json
+auth.json
+
 # OS / editor
 .DS_Store
 *.swp

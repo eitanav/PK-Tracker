@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from ..core.engine import Dose, UserProfile
@@ -247,6 +247,28 @@ class Database:
         self.conn.commit()
         return Dose(substance_id, amount, unit, taken_at, note, id=cur.lastrowid)
 
+    def _bumped_updated_at(self, dose_id: int) -> str:
+        """A stamp guaranteed to outrank this row's current one.
+
+        Last-write-wins compares timestamps at the wire format's resolution
+        (epoch milliseconds). Two changes to the same row inside one millisecond
+        -- log then immediately undo, say -- would otherwise tie, and the second
+        change would look no newer than the copy already in the cloud and never
+        be pushed. Keeping ``updated_at`` strictly increasing per row makes an
+        edit always outrank the version it was derived from.
+        """
+        now = datetime.now(timezone.utc)
+        row = self.conn.execute(
+            "SELECT updated_at FROM doses WHERE id = ?", (dose_id,)
+        ).fetchone()
+        if row and row[0]:
+            try:
+                floor = _from_iso(row[0]) + timedelta(milliseconds=1)
+                now = max(now, floor)
+            except ValueError:
+                pass
+        return _to_iso(now)
+
     def list_doses(
         self, substance_id: str | None = None, since: datetime | None = None,
     ) -> list[Dose]:
@@ -288,7 +310,7 @@ class Database:
             return
         # Any edit bumps updated_at so last-write-wins picks it up on sync.
         sets.append("updated_at = ?")
-        params.append(_to_iso(datetime.now(timezone.utc)))
+        params.append(self._bumped_updated_at(dose_id))
         params.append(dose_id)
         self.conn.execute(f"UPDATE doses SET {', '.join(sets)} WHERE id = ?", params)
         self.conn.commit()
@@ -298,9 +320,72 @@ class Database:
         # to other devices instead of the row resurrecting on the next sync.
         self.conn.execute(
             "UPDATE doses SET deleted = 1, updated_at = ? WHERE id = ?",
-            (_to_iso(datetime.now(timezone.utc)), dose_id),
+            (self._bumped_updated_at(dose_id), dose_id),
         )
         self.conn.commit()
+
+    # ----- sync support ------------------------------------------------------
+    # These deal in raw rows (including tombstones) rather than ``Dose`` objects,
+    # because the sync layer needs the columns ``Dose`` deliberately hides:
+    # uid, deleted and updated_at.
+    def all_for_sync(self) -> list[dict]:
+        """Every dose row, tombstones included, as plain dicts for the sync layer."""
+        rows = self.conn.execute(
+            "SELECT id, uid, substance_id, amount, unit, taken_at, note, deleted,"
+            " updated_at FROM doses WHERE uid IS NOT NULL"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def dose_row_by_uid(self, uid: str) -> dict | None:
+        row = self.conn.execute(
+            "SELECT id, uid, substance_id, amount, unit, taken_at, note, deleted,"
+            " updated_at FROM doses WHERE uid = ?",
+            (uid,),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def known_substance_ids(self) -> set[str]:
+        """Substance ids this install knows about. ``doses.substance_id`` is a
+        foreign key, so a remote dose naming an unknown substance cannot be
+        inserted; the sync layer checks against this and reports what it skipped
+        instead of failing the whole merge."""
+        return {r[0] for r in self.conn.execute("SELECT id FROM substances")}
+
+    def upsert_synced_dose(
+        self, uid: str, substance_id: str, amount: float, unit: str,
+        taken_at: datetime, note: str, deleted: bool, updated_at: datetime,
+    ) -> str:
+        """Apply a remote dose locally, last-write-wins on ``updated_at``.
+
+        Returns ``"inserted"``, ``"updated"`` or ``"skipped"`` (local copy is the
+        same age or newer). Values arrive already validated by the device that
+        wrote them, so this deliberately bypasses ``_validate_dose``: rejecting a
+        peer's row here would silently desynchronise the two logs.
+        """
+        existing = self.dose_row_by_uid(uid)
+        updated_iso = _to_iso(updated_at)
+        if existing is not None and (existing["updated_at"] or "") >= updated_iso:
+            return "skipped"
+        params = (
+            substance_id, amount, unit, _to_iso(taken_at), note,
+            1 if deleted else 0, updated_iso,
+        )
+        if existing is None:
+            self.conn.execute(
+                "INSERT INTO doses (substance_id, amount, unit, taken_at, note,"
+                " deleted, updated_at, uid) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                params + (uid,),
+            )
+            result = "inserted"
+        else:
+            self.conn.execute(
+                "UPDATE doses SET substance_id = ?, amount = ?, unit = ?, taken_at = ?,"
+                " note = ?, deleted = ?, updated_at = ? WHERE uid = ?",
+                params + (uid,),
+            )
+            result = "updated"
+        self.conn.commit()
+        return result
 
     # ----- presets -----------------------------------------------------------
     def list_presets(self, substance_id: str) -> list[Preset]:

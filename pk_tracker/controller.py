@@ -172,3 +172,43 @@ class AppController:
 
     def set_setting(self, key: str, value) -> None:
         self.db.set_setting(key, value)
+
+    # ----- cloud sync --------------------------------------------------------
+    # Built lazily: the sync package reaches for config on import-ish paths, and
+    # the app must still start fine when sync was never set up.
+    @property
+    def cloud(self):
+        from .sync import CloudSync
+
+        if getattr(self, "_cloud", None) is None:
+            self._cloud = CloudSync(self.db)
+        return self._cloud
+
+    @property
+    def sync_configured(self) -> bool:
+        return self.cloud.configured
+
+    def sync_identity(self) -> tuple[str, str] | None:
+        """``(uid, email)`` when signed in, else ``None``."""
+        return self.cloud.identity()
+
+    def sync_sign_in(self) -> tuple[str, str]:
+        return self.cloud.sign_in()
+
+    def sync_sign_out(self) -> None:
+        self.cloud.sign_out()
+
+    def sync_now(self):
+        """Merge with the cloud. Returns a ``SyncResult``; raises ``SyncError``."""
+        result = self.cloud.sync_now()
+        self.reload()
+        return result
+
+    def sync_last_at(self) -> datetime | None:
+        raw = self.get_setting("sync_last_at")
+        if not raw:
+            return None
+        try:
+            return datetime.fromisoformat(raw)
+        except ValueError:
+            return None
