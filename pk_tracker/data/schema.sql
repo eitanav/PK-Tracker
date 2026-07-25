@@ -40,10 +40,18 @@ CREATE TABLE IF NOT EXISTS doses (
     amount       REAL NOT NULL,
     unit         TEXT NOT NULL,                  -- 'mg' | 'g' (ethanol) | 'ml' ...
     taken_at     TEXT NOT NULL,                  -- ISO 8601, UTC
-    note         TEXT
+    note         TEXT,
+    -- Sync-ready columns (match the Android app's Firestore model so the log
+    -- can merge across devices): a global uid, a soft-delete tombstone, and a
+    -- last-modified stamp for last-write-wins.
+    uid          TEXT,                           -- UUID, globally unique across devices
+    deleted      INTEGER NOT NULL DEFAULT 0,     -- soft-delete tombstone
+    updated_at   TEXT                            -- ISO 8601, UTC; last local change
 );
 
 CREATE INDEX IF NOT EXISTS idx_doses_substance_time ON doses(substance_id, taken_at);
+-- Indexes on the sync columns (uid, updated_at) are created by the Python
+-- migration layer, after those columns are guaranteed to exist on legacy DBs.
 
 CREATE TABLE IF NOT EXISTS user_profile (
     key   TEXT PRIMARY KEY,

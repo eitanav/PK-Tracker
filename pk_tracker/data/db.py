@@ -13,6 +13,7 @@ All timestamps are stored as ISO 8601 in UTC and returned as tz-aware
 from __future__ import annotations
 
 import sqlite3
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -25,7 +26,7 @@ from ..core.substances import (
 )
 
 SCHEMA_PATH = Path(__file__).resolve().parent / "schema.sql"
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 # Columns of the substances table, in order, used for round-tripping.
 _SUBSTANCE_COLUMNS = [
@@ -97,7 +98,38 @@ class Database:
         for col, col_type in _MIGRATION_COLUMNS.items():
             if col not in existing:
                 self.conn.execute(f"ALTER TABLE substances ADD COLUMN {col} {col_type}")
+        self._migrate_doses_sync_columns()
         self.conn.commit()
+
+    def _migrate_doses_sync_columns(self) -> None:
+        """Add the sync columns (uid/deleted/updated_at) to pre-existing dose
+        logs and backfill them, so an old local database becomes mergeable with
+        the cloud without losing or duplicating anything. Idempotent."""
+        existing = {row[1] for row in self.conn.execute("PRAGMA table_info(doses)")}
+        added = []
+        if "uid" not in existing:
+            self.conn.execute("ALTER TABLE doses ADD COLUMN uid TEXT")
+            added.append("uid")
+        if "deleted" not in existing:
+            self.conn.execute("ALTER TABLE doses ADD COLUMN deleted INTEGER NOT NULL DEFAULT 0")
+        if "updated_at" not in existing:
+            self.conn.execute("ALTER TABLE doses ADD COLUMN updated_at TEXT")
+            added.append("updated_at")
+        if "uid" in added:
+            # Give every legacy row a stable global uid.
+            for row in self.conn.execute("SELECT id FROM doses WHERE uid IS NULL").fetchall():
+                self.conn.execute(
+                    "UPDATE doses SET uid = ? WHERE id = ?", (str(uuid.uuid4()), row[0])
+                )
+        if "updated_at" in added:
+            # Seed the stamp from taken_at so ordering is sensible until edited.
+            self.conn.execute(
+                "UPDATE doses SET updated_at = taken_at WHERE updated_at IS NULL"
+            )
+        # Index the sync columns now that they are guaranteed to exist (fresh or
+        # migrated). CREATE INDEX IF NOT EXISTS keeps this idempotent.
+        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_doses_uid ON doses(uid)")
+        self.conn.execute("CREATE INDEX IF NOT EXISTS idx_doses_updated ON doses(updated_at)")
 
     def _set_schema_version(self) -> None:
         """Persist the app-level schema version for future migrations/support."""
@@ -206,10 +238,11 @@ class Database:
         taken_at: datetime, note: str = "",
     ) -> Dose:
         self._validate_dose(amount, taken_at)
+        now = _to_iso(datetime.now(timezone.utc))
         cur = self.conn.execute(
-            "INSERT INTO doses (substance_id, amount, unit, taken_at, note)"
-            " VALUES (?, ?, ?, ?, ?)",
-            (substance_id, amount, unit, _to_iso(taken_at), note),
+            "INSERT INTO doses (substance_id, amount, unit, taken_at, note, uid, deleted, updated_at)"
+            " VALUES (?, ?, ?, ?, ?, ?, 0, ?)",
+            (substance_id, amount, unit, _to_iso(taken_at), note, str(uuid.uuid4()), now),
         )
         self.conn.commit()
         return Dose(substance_id, amount, unit, taken_at, note, id=cur.lastrowid)
@@ -217,17 +250,15 @@ class Database:
     def list_doses(
         self, substance_id: str | None = None, since: datetime | None = None,
     ) -> list[Dose]:
-        sql = "SELECT * FROM doses"
-        clauses, params = [], []
+        # Soft-deleted rows are tombstones for sync; never surface them here.
+        clauses, params = ["deleted = 0"], []
         if substance_id is not None:
             clauses.append("substance_id = ?")
             params.append(substance_id)
         if since is not None:
             clauses.append("taken_at >= ?")
             params.append(_to_iso(since))
-        if clauses:
-            sql += " WHERE " + " AND ".join(clauses)
-        sql += " ORDER BY taken_at"
+        sql = "SELECT * FROM doses WHERE " + " AND ".join(clauses) + " ORDER BY taken_at"
         rows = self.conn.execute(sql, params).fetchall()
         return [
             Dose(
@@ -255,12 +286,20 @@ class Database:
             params.append(note)
         if not sets:
             return
+        # Any edit bumps updated_at so last-write-wins picks it up on sync.
+        sets.append("updated_at = ?")
+        params.append(_to_iso(datetime.now(timezone.utc)))
         params.append(dose_id)
         self.conn.execute(f"UPDATE doses SET {', '.join(sets)} WHERE id = ?", params)
         self.conn.commit()
 
     def delete_dose(self, dose_id: int) -> None:
-        self.conn.execute("DELETE FROM doses WHERE id = ?", (dose_id,))
+        # Soft delete: keep the row as a tombstone so the deletion propagates
+        # to other devices instead of the row resurrecting on the next sync.
+        self.conn.execute(
+            "UPDATE doses SET deleted = 1, updated_at = ? WHERE id = ?",
+            (_to_iso(datetime.now(timezone.utc)), dose_id),
+        )
         self.conn.commit()
 
     # ----- presets -----------------------------------------------------------
