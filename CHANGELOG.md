@@ -15,6 +15,46 @@ and the project aims to follow [Semantic Versioning](https://semver.org/).
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
 
+## [2.0.0] - 2026-07-25
+
+Brings the desktop app in line with the Android redesign, and connects the two.
+
+### Added
+- **Cloud sync.** The dose log now syncs with the Android app through the same
+  private Firebase project. Signing in with the same Google account yields the
+  same Firebase `uid`, so both logs converge on `users/{uid}/doses/{doseUid}`.
+  Merge is last-write-wins by `updatedAt` and honours soft deletes, so a
+  deletion on the phone stays deleted here. Runs over plain HTTPS REST with no
+  SDK and **no new dependencies**. Set-up and troubleshooting: [`docs/SYNC.md`](docs/SYNC.md).
+  Usable from the command line today (`python -m pk_tracker.sync.cli`); the
+  Settings button lands next.
+- **Per-substance theming.** The active substance re-tints the whole
+  window — plot, gauge, logo, tray icon and accents — in its own colour.
+- **Hero gauge.** The status panel now leads with an animated circular gauge
+  (sweep + count-up) showing the current level against its meaningful
+  reference: jitter zone, effect %, or the legal BAC limit.
+- **Insights view.** A second page on the timeline panel turning the log into
+  patterns: busiest hours, weekly rhythm, doses per active day, this week's
+  total, usual first-dose time, and a logging streak. The statistics mirror the
+  Android app's exactly, so both report the same numbers.
+- **New logo.** App, window and tray marks are now the pharmacokinetic curve
+  itself (absorption → peak → clearance), re-tinted per substance.
+
+### Fixed
+- **The alcohol chart was unreadable.** The level axis was floored at `1.0`,
+  which fits caffeine's mg/L but not alcohol's g/dL, so an entire evening's BAC
+  curve was flattened into the bottom few percent of the plot. The axis now
+  scales in the substance's own unit — a 0.060 g/dL peak fills ~80% of the plot
+  height instead of ~6%.
+
+### Changed
+- Dose deletions are now **soft** (tombstone + `updated_at`) so removals
+  propagate between devices instead of reappearing on the next sync. Existing
+  databases migrate additively (schema v3): every dose gains a global `uid`,
+  backfilled in place, with nothing lost.
+- `updated_at` is strictly monotonic per row, so two edits inside one
+  millisecond cannot tie and lose the later one during a sync.
+
 ## [1.6.1] - 2026-06-17
 
 ### Changed
