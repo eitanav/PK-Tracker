@@ -6,7 +6,7 @@
 > קבצים נלווים: [`CHANGELOG.md`](CHANGELOG.md) (מה השתנה בכל גרסה) ·
 > [`TODO.md`](TODO.md) (מה צריך/כדאי לעשות).
 
-עדכון אחרון: **2026-07-24 · גרסה 2.2.0**
+עדכון אחרון: **2026-07-25 · גרסה 2.5.0**
 
 ---
 
@@ -25,12 +25,13 @@
 
 - ✅ **האפליקציה עובדת ומותקנת** (הגרסה הראשונה שרצה בפועל הייתה 1.0.2 — לפני
   כן היה באג theme שהקריס בהפעלה).
-- ✅ **גרסה 2.2.0** היא האחרונה: עיצוב פרימיום (ערכת צבע פר-חומר, גייג', מסך
-  Insights, לוגו-עקומה, אנימציות), חתך שינה לממריצים, **תזכורות חכמות**,
-  ותשתית סנכרון מקומית.
-- 🔄 **בעבודה עכשיו:** **סנכרון בין מכשירים דרך Firebase Firestore.** התשתית
-  המקומית (UUID + מחיקה רכה) כבר קיימת; נשאר לחבר את שכבת ה-Firestore.
-  פרטים ב-`TODO.md` תחת "סנכרון".
+- ✅ **גרסה 2.4.0** מפורסמת ב-`main`: עיצוב פרימיום (ערכת צבע פר-חומר, גייג',
+  מסך Insights, לוגו-עקומה, אנימציות), חתך שינה לממריצים, **תזכורות חכמות**,
+  **ווידג'ט למסך הבית**, ו**סנכרון ענן** (Firebase Firestore + התחברות אנונימית).
+- 🔄 **בעבודה עכשיו — Google Sign-In (2.5.0):** הקוד **מוכן ודחוף לענף הפיתוח**
+  (`claude/pk-tracker-android-psrur6`), אבל **עוד לא מוזג ל-main** כי הוא דורש
+  שני צעדים ידניים בקונסולת Firebase (ראה §7 למטה). כולל **debug.keystore קבוע**
+  שמחויב בגיט כך שה-SHA-1 יציב בכל build (דרישה של Google Sign-In).
 - ⚠️ **אימות:** אני (Claude) לא יכול להריץ את האפליקציה — כל שינוי UI מאומת רק
   **קומפילציה** דרך ה-CI. בדיקת ריצה בפועל היא עליך, על המכשיר.
 
@@ -98,8 +99,32 @@ cd android && ./gradlew :app:assembleDebug
 - אימות ריצה בפועל תלוי בך (אין הרצת אמולטור בצד שלי).
 - ה-CI רץ רק על `main`/`android-app` — לא על ענף הפיתוח.
 - `google-services.json` (של Firebase) **לא** בריפו — יוזרק דרך GitHub Secret
-  בשלב הסנכרון (הריפו ציבורי). פרויקט Firebase: `pk-tracker-2f600`.
+  (`GOOGLE_SERVICES_JSON`) ב-CI (הריפו ציבורי). פרויקט Firebase: `pk-tracker-2f600`.
 - build הוא **debug** (לא Play Store) — ראה `TODO.md` להפצה עתידית.
+- **SHA-1 של ה-debug keystore הקבוע:**
+  `FD:27:0B:DC:89:0E:C4:0E:70:22:C9:80:5A:68:AC:B6:DF:9B:59:73`
+  (וגם SHA-256: `51:AF:B7:FA:A7:D6:26:9B:AE:06:82:2E:8A:98:69:81:5F:DA:47:2F:EC:04:93:0E:91:0D:28:FF:49:8B:20:B6`).
+  הקובץ עצמו: `android/app/debug.keystore` (סיסמאות: `android`/`android`,
+  alias `androiddebugkey`). זה **לא סוד** — keystore של debug בלבד.
+
+## 7. ⏳ צעדים ידניים להשלמת Google Sign-In (עליך, בקונסולת Firebase)
+
+הקוד מוכן בענף הפיתוח. כדי למזג ל-main ולשחרר את 2.5.0, צריך **שלושה** צעדים
+בקונסולה (https://console.firebase.google.com → פרויקט `pk-tracker-2f600`):
+
+1. **הפעלת Google כספק התחברות:** Authentication → Sign-in method →
+   Add new provider → **Google** → Enable → בחר אימייל תמיכה → Save.
+2. **רישום ה-SHA-1:** Project settings (גלגל השיניים) → תחת האפליקציה
+   לאנדרואיד → **Add fingerprint** → הדבק:
+   `FD:27:0B:DC:89:0E:C4:0E:70:22:C9:80:5A:68:AC:B6:DF:9B:59:73` → Save.
+3. **הורדה מחדש של `google-services.json`** (מאותו מסך Project settings) —
+   עכשיו הוא יכיל גם את ה-web client (ל-`default_web_client_id`) וגם את ה-SHA.
+   פותחים את הקובץ, מעתיקים את כל התוכן, ומעדכנים את ה-GitHub Secret בשם
+   `GOOGLE_SERVICES_JSON` (Settings → Secrets and variables → Actions →
+   `GOOGLE_SERVICES_JSON` → Update).
+
+אחרי שלושת אלה — למזג את `claude/pk-tracker-android-psrur6` ל-main, וה-CI יבנה
+ויפרסם את 2.5.0 עם התחברות Google.
 
 ---
 

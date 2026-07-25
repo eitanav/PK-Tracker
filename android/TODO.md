@@ -3,7 +3,7 @@
 > רשימת עבודה חיה. ראה [`HANDOFF.md`](HANDOFF.md) למצב הכללי ו-[`CHANGELOG.md`](CHANGELOG.md)
 > למה שכבר שוחרר. סמן `[x]` כשמסיימים.
 
-עדכון אחרון: 2026-07-24
+עדכון אחרון: 2026-07-25
 
 ---
 
@@ -18,10 +18,15 @@
 
 ## 🔄 עכשיו בעבודה
 
-- [ ] **Google Sign-In** (קוד מוכן, ממתין להזרקה) — הקוד כתוב (2.5.0), אבל
-      דורש `google-services.json` שהורד **מחדש אחרי** הפעלת Google בקונסולה
-      (כדי שיכיל את ה-web client), ועדכון ה-secret `GOOGLE_SERVICES_JSON`.
-      אחרי זה — מיזוג ל-main.
+- [ ] **Google Sign-In** (קוד מוכן, ממתין ל-3 צעדים ידניים בקונסולה) — הקוד
+      כתוב ודחוף לענף (2.5.0), כולל `debug.keystore` קבוע ל-SHA-1 יציב.
+      נשאר (ראה `HANDOFF.md` §7):
+  - [x] debug.keystore קבוע + signingConfig (SHA-1 יציב בכל build).
+  - [ ] בקונסולה: להפעיל את Google כספק התחברות (Authentication → Sign-in method).
+  - [ ] בקונסולה: לרשום את ה-SHA-1
+        `FD:27:0B:DC:89:0E:C4:0E:70:22:C9:80:5A:68:AC:B6:DF:9B:59:73`.
+  - [ ] להוריד מחדש את `google-services.json` ולעדכן את ה-secret `GOOGLE_SERVICES_JSON`.
+  - [ ] למזג ל-main → CI בונה ומפרסם 2.5.0.
 
 ## 🔜 הבא בתור
 
