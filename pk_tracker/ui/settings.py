@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import re
 
-from PySide6.QtCore import QTime
+from PySide6.QtCore import QThread, QTime, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -43,6 +43,26 @@ from .theme import COLORS
 def _slug(name: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "_", name.strip().lower()).strip("_")
     return s or "substance"
+
+
+class _SyncWorker(QThread):
+    """Runs one sync call off the GUI thread.
+
+    Sign-in in particular parks on a loopback socket until the user finishes in
+    their browser, which would otherwise freeze the window solid.
+    """
+
+    done = Signal(object, str)          # result, error message ("" when fine)
+
+    def __init__(self, fn, parent=None):
+        super().__init__(parent)
+        self._fn = fn
+
+    def run(self):
+        try:
+            self.done.emit(self._fn(), "")
+        except Exception as e:                       # surfaced in the dialog
+            self.done.emit(None, str(e))
 
 
 class SettingsDialog(QDialog):
@@ -194,6 +214,34 @@ class SettingsDialog(QDialog):
         prow.addStretch(1)
         root.addLayout(prow)
 
+        # --- Cloud sync ---
+        root.addWidget(self._h2("Cloud sync"))
+        self._sync_worker = None                     # keep alive while running
+        self.sync_status = QLabel("Checking…")
+        self.sync_status.setWordWrap(True)
+        root.addWidget(self.sync_status)
+
+        syncrow = QHBoxLayout()
+        self.sync_auth_btn = QPushButton("Sign in with Google…")
+        self.sync_auth_btn.clicked.connect(self._on_sync_auth)
+        self.sync_now_btn = QPushButton("Sync now")
+        self.sync_now_btn.clicked.connect(self._on_sync_now)
+        syncrow.addWidget(self.sync_auth_btn)
+        syncrow.addWidget(self.sync_now_btn)
+        syncrow.addStretch(1)
+        root.addLayout(syncrow)
+
+        sync_hint = QLabel(
+            "Keeps your dose log in step with the Android app through your own "
+            "Firebase project. Sign in with the same Google account you used on "
+            "your phone — a different account means a separate log. One-time "
+            "setup instructions are in docs/SYNC.md."
+        )
+        sync_hint.setObjectName("Muted")
+        sync_hint.setWordWrap(True)
+        root.addWidget(sync_hint)
+        self._refresh_sync_status()
+
         # --- Data ---
         root.addWidget(self._h2("Data"))
         exp = QPushButton("Export dose log…  (CSV / JSON)")
@@ -215,6 +263,87 @@ class SettingsDialog(QDialog):
         lbl = QLabel(text)
         lbl.setObjectName("H2")
         return lbl
+
+    # ----- cloud sync --------------------------------------------------------
+    def _run_sync_task(self, fn, on_done):
+        """Run ``fn`` in a worker, keeping the buttons disabled until it lands."""
+        if self._sync_worker is not None and self._sync_worker.isRunning():
+            return
+        self.sync_auth_btn.setEnabled(False)
+        self.sync_now_btn.setEnabled(False)
+        worker = _SyncWorker(fn, self)
+        worker.done.connect(on_done)
+        worker.done.connect(lambda *_: self._refresh_sync_status())
+        self._sync_worker = worker
+        worker.start()
+
+    def _refresh_sync_status(self):
+        """Read the current sign-in state and relabel the section."""
+        if not self.controller.sync_configured:
+            self.sync_status.setText(
+                "Not set up on this computer. See docs/SYNC.md for the one-time setup."
+            )
+            self.sync_auth_btn.setEnabled(False)
+            self.sync_now_btn.setEnabled(False)
+            return
+
+        def read_state():
+            return self.controller.sync_identity(), self.controller.sync_last_at()
+
+        def apply(result, error):
+            self.sync_auth_btn.setEnabled(True)
+            identity, last = (result or (None, None))
+            if error or identity is None:
+                self.sync_status.setText("Not signed in.")
+                self.sync_auth_btn.setText("Sign in with Google…")
+                self.sync_now_btn.setEnabled(False)
+                return
+            _uid, email = identity
+            when = last.astimezone().strftime("%d %b, %H:%M") if last else "never"
+            self.sync_status.setText(
+                f"Signed in as {email or 'your Google account'} · last sync: {when}"
+            )
+            self.sync_auth_btn.setText("Sign out")
+            self.sync_now_btn.setEnabled(True)
+
+        # Deliberately not via _run_sync_task: this is the status read itself,
+        # and must not recurse into another refresh when it finishes.
+        self.sync_auth_btn.setEnabled(False)
+        self.sync_now_btn.setEnabled(False)
+        worker = _SyncWorker(read_state, self)
+        worker.done.connect(apply)
+        self._status_worker = worker
+        worker.start()
+
+    def _on_sync_auth(self):
+        if self.sync_auth_btn.text() == "Sign out":
+            self.controller.sync_sign_out()
+            self._refresh_sync_status()
+            return
+
+        def done(result, error):
+            if error:
+                QMessageBox.warning(self, "Sign-in failed", error)
+            elif result:
+                _uid, email = result
+                QMessageBox.information(
+                    self, "Signed in", f"Signed in as {email or 'your Google account'}."
+                )
+
+        self.sync_status.setText("Waiting for the browser sign-in…")
+        self._run_sync_task(self.controller.sync_sign_in, done)
+
+    def _on_sync_now(self):
+        def done(result, error):
+            if error:
+                QMessageBox.warning(self, "Sync failed", error)
+                return
+            if result is not None:
+                self.window.refresh_all()        # doses may have arrived
+                QMessageBox.information(self, "Sync complete", result.summary())
+
+        self.sync_status.setText("Syncing…")
+        self._run_sync_task(self.controller.sync_now, done)
 
     # ----- sleep cutoff ------------------------------------------------------
     def _on_sleep_mode_changed(self, idx: int):
