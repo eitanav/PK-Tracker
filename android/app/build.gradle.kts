@@ -21,8 +21,22 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    signingConfigs {
+        // A committed, stable debug keystore so every build (local + CI) is
+        // signed with the same SHA-1. Google Sign-In requires a fixed
+        // fingerprint registered in Firebase; without this, CI's random
+        // per-build debug key would fail auth (DEVELOPER_ERROR, status 10).
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         debug {
+            signingConfig = signingConfigs.getByName("debug")
             // No applicationIdSuffix: debug shares the com.pktracker.android
             // package registered in Firebase, so google-services.json matches.
         }
