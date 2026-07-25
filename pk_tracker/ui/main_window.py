@@ -1,9 +1,13 @@
 """The main dashboard window.
 
-Left: substance selector, dose logging, and the dose history.
-Centre: the timeline plot (blood level + effect, past solid, future dashed).
-Right: status readout, sleep-cutoff solver, alcohol clearance, and access to
-calibration / custom substances.
+Left: brand mark, substance selector, dose logging, and the dose history.
+Centre: two pages behind a segmented switch — the timeline plot (blood level +
+effect, past solid, future dashed) and Insights (the log read back as patterns).
+Right: the hero gauge and its stat tiles, the sleep-cutoff solver, alcohol
+clearance, and access to calibration / custom substances.
+
+The active substance tints the whole window: picking one re-derives the theme
+accent from its own colour and repaints the chrome that caches colours.
 
 A QTimer fires every few seconds only to redraw and re-check alerts; it does
 not advance any simulation. Closing the window hides to the system tray.
@@ -18,6 +22,7 @@ from PySide6.QtCore import Qt, QTime, QTimer
 from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
+    QButtonGroup,
     QCheckBox,
     QComboBox,
     QDateTimeEdit,
@@ -35,6 +40,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QSpinBox,
+    QStackedWidget,
     QSystemTrayIcon,
     QTimeEdit,
     QToolButton,
@@ -45,10 +51,13 @@ from PySide6.QtWidgets import (
 from ..controller import SLEEP_SENSITIVITY_MG, now_utc
 from ..core.engine import Dose
 from . import status
+from .brand import PkLogo, make_app_icon
+from .gauge import HeroGauge
+from .insights import InsightsView
 from .plots import TimelinePlot
 from .settings import CalibrationDialog, CustomSubstanceDialog, SettingsDialog
-from .theme import COLORS, apply_theme, mono_font
-from .tray import AppTray, make_app_icon
+from .theme import COLORS, apply_theme, mono_font, set_accent, stat_tile
+from .tray import AppTray
 from .widget import FloatingWidget
 
 DISCLAIMER = (
@@ -82,12 +91,17 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.controller = controller
         self.setWindowTitle("PK Tracker")
-        self.resize(1180, 720)
-        self.icon = make_app_icon()
-        self.setWindowIcon(self.icon)
+        self.resize(1240, 760)
 
         subs = controller.ordered_substances()
         self.active_sid = subs[0].id if subs else None
+        # Tint before anything is built, so the very first paint is on-brand.
+        if self.active_sid is not None:
+            set_accent(controller.substance(self.active_sid).color)
+            apply_theme(QApplication.instance())
+        self.icon = make_app_icon(COLORS["accent"])
+        self.setWindowIcon(self.icon)
+
         self._redose_notified: dict[str, bool] = {}
         self._sleep_notified: dict[str, bool] = {}
         self._sleep_cutoff_at = None      # last computed coffee curfew, for the timing check
@@ -138,14 +152,20 @@ class MainWindow(QMainWindow):
     # ----- layout: left ------------------------------------------------------
     def _build_left(self):
         panel = _panel()
-        panel.setFixedWidth(280)
+        panel.setFixedWidth(286)
         v = QVBoxLayout(panel)
         v.setContentsMargins(14, 14, 14, 14)
         v.setSpacing(10)
 
+        header = QHBoxLayout()
+        header.setSpacing(9)
+        self.logo = PkLogo(30)
+        header.addWidget(self.logo)
         title = QLabel("PK Tracker")
         title.setObjectName("H1")
-        v.addWidget(title)
+        header.addWidget(title)
+        header.addStretch(1)
+        v.addLayout(header)
 
         v.addWidget(self._h2("Substance"))
         self.sub_list = QListWidget()
@@ -214,9 +234,48 @@ class MainWindow(QMainWindow):
 
     # ----- layout: center ----------------------------------------------------
     def _build_center(self):
+        """Two pages — the timeline and Insights — behind a segmented switch."""
         panel = _panel()
-        v = QVBoxLayout(panel)
-        v.setContentsMargins(12, 12, 12, 12)
+        outer = QVBoxLayout(panel)
+        outer.setContentsMargins(12, 12, 12, 12)
+        outer.setSpacing(10)
+
+        switch = QHBoxLayout()
+        switch.setSpacing(4)
+        self.view_group = QButtonGroup(self)
+        for index, name in enumerate(("Timeline", "Insights")):
+            b = QPushButton(name)
+            b.setObjectName("Segment")
+            b.setCheckable(True)
+            b.setCursor(Qt.PointingHandCursor)
+            self.view_group.addButton(b, index)
+            switch.addWidget(b)
+        self.view_group.button(0).setChecked(True)
+        self.view_group.idClicked.connect(self._show_page)
+        switch.addStretch(1)
+        outer.addLayout(switch)
+
+        self.pages = QStackedWidget()
+        self.pages.addWidget(self._build_timeline_page())
+        self.insights_view = InsightsView(self.controller, self.active_sid)
+        self.pages.addWidget(self.insights_view)
+        outer.addWidget(self.pages, 1)
+
+        disclaimer = QLabel(DISCLAIMER)
+        disclaimer.setObjectName("Disclaimer")
+        disclaimer.setWordWrap(True)
+        outer.addWidget(disclaimer)
+        return panel
+
+    def _show_page(self, index: int):
+        self.pages.setCurrentIndex(index)
+        if index == 1:
+            self.insights_view.refresh()
+
+    def _build_timeline_page(self):
+        page = QWidget()
+        v = QVBoxLayout(page)
+        v.setContentsMargins(0, 0, 0, 0)
         v.setSpacing(8)
 
         self.plot = TimelinePlot()
@@ -270,51 +329,53 @@ class MainWindow(QMainWindow):
         self.window_box.currentIndexChanged.connect(self._redraw_plot)
         controls.addWidget(self.window_box)
         v.addLayout(controls)
-
-        disclaimer = QLabel(DISCLAIMER)
-        disclaimer.setObjectName("Disclaimer")
-        disclaimer.setWordWrap(True)
-        v.addWidget(disclaimer)
-        return panel
+        return page
 
     # ----- layout: right -----------------------------------------------------
     def _build_right(self):
         panel = _panel()
-        panel.setFixedWidth(300)
+        panel.setFixedWidth(318)
         v = QVBoxLayout(panel)
         v.setContentsMargins(14, 14, 14, 14)
         v.setSpacing(12)
 
-        # Status readout.
+        # Status: the hero gauge leads, then its caption and the next action.
         v.addWidget(self._h2("Status"))
         self.status_name = QLabel("—")
         self.status_name.setObjectName("H1")
+        self.status_name.setAlignment(Qt.AlignCenter)
         v.addWidget(self.status_name)
 
-        self.big_value = QLabel("—")
-        self.big_value.setFont(mono_font(34, 700))
-        v.addWidget(self.big_value)
+        self.gauge = HeroGauge(150)
+        v.addWidget(self.gauge, alignment=Qt.AlignHCenter)
+
         self.big_caption = QLabel("")
         self.big_caption.setObjectName("Sub")
+        self.big_caption.setAlignment(Qt.AlignCenter)
+        self.big_caption.setWordWrap(True)
         v.addWidget(self.big_caption)
 
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(10)
-        grid.setVerticalSpacing(4)
-        self.readout_labels = {}
-        for r, key in enumerate(["Blood level", "Since last", "Projected peak", "Effect", "Today"]):
-            cap = QLabel(key)
-            cap.setObjectName("Muted")
-            val = QLabel("—")
-            val.setFont(mono_font(12))
-            grid.addWidget(cap, r, 0)
-            grid.addWidget(val, r, 1, alignment=Qt.AlignRight)
-            self.readout_labels[key] = val
-        v.addLayout(grid)
-
         self.action_chip = QLabel("—")
-        self.action_chip.setFont(mono_font(13, 600))
-        v.addWidget(self.action_chip)
+        self.action_chip.setObjectName("Chip")
+        self.action_chip.setFont(mono_font(12, 600))
+        self.action_chip.setAlignment(Qt.AlignCenter)
+        v.addWidget(self.action_chip, alignment=Qt.AlignHCenter)
+
+        # The secondary numbers, as a grid of inset tiles.
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(8)
+        grid.setVerticalSpacing(8)
+        self.readout_labels = {}
+        cells = [
+            ("Blood level", 0, 0, 1), ("Since last", 0, 1, 1),
+            ("Projected peak", 1, 0, 1), ("Effect", 1, 1, 1),
+            ("Today", 2, 0, 2),
+        ]
+        for key, r, c, span in cells:
+            tile, value = stat_tile(key)
+            grid.addWidget(tile, r, c, 1, span)
+            self.readout_labels[key] = value
+        v.addLayout(grid)
 
         # Sleep cutoff readout. The method (mg / sensitivity / hours) and bedtime
         # are configured in Settings → Sleep cutoff; this just shows the answer.
@@ -413,8 +474,29 @@ class MainWindow(QMainWindow):
         self._sync_substance_widgets()
         self.refresh_all()
 
+    def _apply_substance_accent(self, sub):
+        """Re-tint the whole UI to the substance's own colour.
+
+        ``set_accent`` rewrites COLORS in place, so re-applying the stylesheet
+        covers everything styled by it. The plot, sparkline, icons and the few
+        inline stylesheets cache colours at construction, so they are refreshed
+        by hand here.
+        """
+        if not set_accent(sub.color):
+            return
+        apply_theme(QApplication.instance())
+        self.plot.apply_theme()
+        self.widget.spark.apply_theme()
+        self.logo.update()
+        self.icon = make_app_icon(COLORS["accent"])
+        self.setWindowIcon(self.icon)
+        self.tray.setIcon(self.icon)
+        for label in (self.sleep_headline, self.timing_headline):
+            label.setStyleSheet(f"color: {COLORS['accent']};")
+
     def _sync_substance_widgets(self):
         sub = self.controller.substance(self.active_sid)
+        self._apply_substance_accent(sub)
         # Rebuild preset buttons. setParent(None) unparents immediately so the
         # old buttons stop rendering at once (deleteLater alone is async and can
         # leave a stale button floating until the next event-loop pass).
@@ -453,6 +535,7 @@ class MainWindow(QMainWindow):
         self.sim_amount.setVisible(sub.redose_eligible)
         self.sim_in_label.setVisible(sub.redose_eligible)
         self.sim_in_min.setVisible(sub.redose_eligible)
+        self.insights_view.set_substance(self.active_sid)
 
     # ----- dose logging ------------------------------------------------------
     def _log_preset(self, preset):
@@ -560,6 +643,8 @@ class MainWindow(QMainWindow):
         self._refresh_history()
         self._redraw_plot()
         self._refresh_status()
+        if self.pages.currentIndex() == 1:
+            self.insights_view.refresh()
         self.widget.refresh()
 
     def _refresh_history(self):
@@ -629,7 +714,7 @@ class MainWindow(QMainWindow):
         self.legend_effect.setVisible(effect_pct is not None)
         self.legend_effect.setText("●  Effect (% of recent peak)")
         self.legend_effect.setStyleSheet(
-            f"font-size: 11px; font-weight: 600; color: {COLORS['accent']};"
+            f"font-size: 11px; font-weight: 600; color: {COLORS['effect']};"
         )
 
         if sub.sleep_threshold is not None:
@@ -656,35 +741,53 @@ class MainWindow(QMainWindow):
         self.plot.mark_now()
         self.plot.set_x_window(start.timestamp(), end.timestamp())
 
+    def _hero_model(self, sub, r, over):
+        """What the gauge reads: (value, decimals, unit, ring fraction, caption).
+
+        Mirrors the Android hero so both apps headline the same number: alcohol
+        reads BAC against the driving limit, caffeine mg against the jitter
+        zone, other stimulants mg with the ring tracking effect, and anything
+        without a body-mass concept falls back to its raw concentration.
+        """
+        name = sub.name.lower()
+        if sub.is_alcohol:
+            limit = self.controller.profile.legal_bac_limit
+            bac = r["conc_value"]
+            fraction = bac / limit if limit > 0 else 0.0
+            return bac, 3, r["conc_unit"], fraction, f"BAC · of the {limit:.2f} limit"
+        if r["body_mg"] is not None and over.has_threshold and over.threshold_mg:
+            return (
+                r["body_mg"], 0, "mg", r["body_mg"] / over.threshold_mg,
+                f"{name} in body · jitter zone ~{over.threshold_mg:.0f} mg",
+            )
+        if r["body_mg"] is not None:
+            pct = r["effect_pct"]
+            caption = f"{name} in body"
+            if pct is not None:
+                caption += f" · effect {pct:.0f}% of recent peak"
+            return r["body_mg"], 0, "mg", (pct or 0.0) / 100.0, caption
+        return r["conc_value"], 3, r["conc_unit"], 0.0, "current level"
+
     def _refresh_status(self):
         now = now_utc()
         sub = self.controller.substance(self.active_sid)
         self.status_name.setText(sub.name)
-        self.status_name.setStyleSheet(f"color: {sub.color};")
+        self.status_name.setStyleSheet(f"color: {COLORS['accent']};")
 
         r = status.current_readout(self.controller, self.active_sid, now)
         over = self.controller.overload_info(self.active_sid, now)
-        # Primary metric: concrete mass in the body (mg). Effect % is secondary.
-        if r["body_mg"] is not None:
-            self.big_value.setText(f"{r['body_mg']:.0f} mg")
-            if over.has_threshold:
-                self.big_caption.setText(f"{sub.name.lower()} in body · jitter zone ~{over.threshold_mg:.0f} mg")
-            else:
-                self.big_caption.setText(f"{sub.name.lower()} in body")
-        else:
-            self.big_value.setText(f"{r['conc_value']:.3f}")
-            self.big_caption.setText(f"current level · {r['conc_unit']}")
-
-        accent = sub.color
-        if over.over:
-            accent = COLORS["warn"]
-        self.big_value.setStyleSheet(f"color: {accent};")
+        value, decimals, unit, fraction, caption = self._hero_model(sub, r, over)
+        self.gauge.set_reading(
+            value=value, fraction=fraction, unit=unit, decimals=decimals,
+            accent=COLORS["warn"] if over.over else COLORS["accent"],
+        )
+        self.big_caption.setText(caption)
 
         self.readout_labels["Blood level"].setText(f"{r['conc_value']:.3f} {r['conc_unit']}")
         self.readout_labels["Since last"].setText(r["since_last"])
         self.readout_labels["Projected peak"].setText(r["peak_at"])
         if r["effect_pct"] is not None:
-            self.readout_labels["Effect"].setText(f"{r['effect_pct']:.0f}% of recent peak")
+            self.readout_labels["Effect"].setText(f"{r['effect_pct']:.0f}%")
         else:
             self.readout_labels["Effect"].setText("—")
 
@@ -969,6 +1072,7 @@ class MainWindow(QMainWindow):
         # Refresh chrome that caches colours at construction time.
         self.plot.apply_theme()
         self.widget.spark.apply_theme()
+        self.logo.update()
         self.refresh_all()
 
     def _open_settings(self):

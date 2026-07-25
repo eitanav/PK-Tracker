@@ -1,4 +1,4 @@
-"""Generate ``installer/pktracker.ico`` from the app's painted icon.
+"""Generate ``installer/pktracker.ico`` from the app's painted brand mark.
 
 Run once after changing the icon design::
 
@@ -24,7 +24,7 @@ from PySide6.QtGui import QImage, QPainter  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from pk_tracker.ui.tray import _paint_icon  # noqa: E402
+from pk_tracker.ui.brand import paint_mark  # noqa: E402
 
 SIZES = [16, 24, 32, 48, 64, 128, 256]
 OUT = Path(__file__).resolve().parent.parent / "installer" / "pktracker.ico"
@@ -34,7 +34,7 @@ def _render(n: int) -> QImage:
     img = QImage(n, n, QImage.Format_ARGB32)
     img.fill(0)
     p = QPainter(img)
-    _paint_icon(p, n)
+    paint_mark(p, n)
     p.end()
     return img
 

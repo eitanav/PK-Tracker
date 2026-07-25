@@ -73,9 +73,9 @@ class TimelinePlot(pg.PlotWidget):
         self.p1.scene().addItem(self.vb2)
         self.p1.getAxis("right").linkToView(self.vb2)
         self.vb2.setXLink(self.p1)
-        self.p1.getAxis("right").setLabel("Effect", units="%", color=COLORS["accent"])
+        self.p1.getAxis("right").setLabel("Effect", units="%", color=COLORS["effect"])
         self.p1.getAxis("bottom").setStyle(tickTextOffset=8, autoExpandTextSpace=True)
-        self.p1.getAxis("right").setTextPen(COLORS["accent"])
+        self.p1.getAxis("right").setTextPen(COLORS["effect"])
         self.vb2.setYRange(0, 105, padding=0)
         self.vb2.setMouseEnabled(x=False, y=False)
         self.p1.vb.sigResized.connect(self._sync_views)
@@ -115,8 +115,8 @@ class TimelinePlot(pg.PlotWidget):
         self.setBackground(COLORS["bg"])
         self.p1.getAxis("left").setTextPen(COLORS["subtext"])
         self.p1.getAxis("bottom").setTextPen(COLORS["subtext"])
-        self.p1.getAxis("right").setTextPen(COLORS["accent"])
-        self.p1.getAxis("right").setLabel("Effect", units="%", color=COLORS["accent"])
+        self.p1.getAxis("right").setTextPen(COLORS["effect"])
+        self.p1.getAxis("right").setLabel("Effect", units="%", color=COLORS["effect"])
         self.p1.getAxis("bottom").setStyle(tickTextOffset=8, autoExpandTextSpace=True)
 
     # ----- lifecycle ---------------------------------------------------------
@@ -221,7 +221,7 @@ class TimelinePlot(pg.PlotWidget):
         width = 2.4 if primary else 1.4
         self._split_line(x, concentration, color, width, right=False, fill=primary)
         if primary and effect_pct is not None:
-            self._split_line(x, effect_pct, COLORS["accent"], 1.8, right=True, fill=False)
+            self._split_line(x, effect_pct, COLORS["effect"], 1.8, right=True, fill=False)
             self._grow_effect_axis(effect_pct)
 
     def add_overlay_effect(self, x, effect_pct, color):
