@@ -26,8 +26,8 @@ Brings the desktop app in line with the Android redesign, and connects the two.
   Merge is last-write-wins by `updatedAt` and honours soft deletes, so a
   deletion on the phone stays deleted here. Runs over plain HTTPS REST with no
   SDK and **no new dependencies**. Set-up and troubleshooting: [`docs/SYNC.md`](docs/SYNC.md).
-  Usable from the command line today (`python -m pk_tracker.sync.cli`); the
-  Settings button lands next.
+  Drive it from **Settings → Cloud sync** (sign in, sync now, last-sync time)
+  or from the command line (`python -m pk_tracker.sync.cli`).
 - **Per-substance theming.** The active substance re-tints the whole
   window — plot, gauge, logo, tray icon and accents — in its own colour.
 - **Hero gauge.** The status panel now leads with an animated circular gauge
