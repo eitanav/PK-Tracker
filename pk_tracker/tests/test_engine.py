@@ -137,6 +137,10 @@ def test_alcohol_uses_widmark_and_sex_ratio():
     doses = [Dose("alcohol", grams, "g", NOW)]
     male = SubstanceTimeline(alcohol, doses, _profile(sex="male"))
     female = SubstanceTimeline(alcohol, doses, _profile(sex="female"))
+    # Absorption takes ~30 min by default, so compare once the drink is in.
+    peak = NOW + timedelta(minutes=30)
     # Same dose hits a smaller-r body (female default) harder.
-    assert female.concentration_at(NOW) > male.concentration_at(NOW)
-    assert male.concentration_at(NOW) == pytest.approx(grams / (0.68 * 70 * 10))
+    assert female.concentration_at(peak) > male.concentration_at(peak)
+    # The Widmark height itself, with absorption taken out of the way.
+    instant = SubstanceTimeline(alcohol, doses, _profile(sex="male", alcohol_ramp_min=0))
+    assert instant.concentration_at(NOW) == pytest.approx(grams / (0.68 * 70 * 10))

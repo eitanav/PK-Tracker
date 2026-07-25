@@ -9,6 +9,31 @@ tag `android-vX.Y.Z`, matching `versionName` in `app/build.gradle.kts`. The
 in-app **Settings → About** card links straight to that releases page and
 mirrors this changelog.
 
+## [2.6.0] - 2026-07-25
+
+### Fixed
+- **Alcohol absorption was instantaneous.** A drink jumped straight to its peak
+  BAC the moment it was logged, then fell in a straight line — so the chart was
+  a vertical step followed by a slope, and the first hour was overstated by
+  roughly a third. Ethanol actually reaches the blood over ~20–60 min, peaking
+  around 30–45 min on an empty stomach (later and lower after a meal, because
+  elimination runs while absorption continues). Absorption now spreads over a
+  30-minute window by default.
+  For one standard drink (14 g) in a 70 kg man, the peak moves from 0.029 g/dL
+  *at the moment of the first sip* to 0.022 g/dL *half an hour in* — which is
+  where the literature puts it.
+- The absorption ramp is now modelled as **exact continuous absorption** rather
+  than ten discrete sub-doses, which had made the rising edge a visible
+  staircase (~13% ripple) instead of a smooth climb.
+
+### Notes
+- The **falling** limb stays a straight line, and that is correct, not a bug:
+  alcohol elimination is zero-order (alcohol dehydrogenase saturates at very low
+  concentrations), unlike the exponential decay of caffeine. Tests now pin this
+  down in both engines so it is not "fixed" into a curve later.
+- The Android and desktop engines are checked against each other to 1e-9, so
+  both apps report the same BAC for the same drink.
+
 ## [2.5.0] - 2026-07-24
 
 ### Added

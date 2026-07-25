@@ -5,6 +5,9 @@ const val MODEL_ONE_COMPARTMENT_ER = "one_compartment_er"
 const val MODEL_WIDMARK = "widmark_zero_order"
 const val DEFAULT_LEGAL_BAC_LIMIT = 0.05
 
+/** Default alcohol absorption window, in minutes. See [UserProfile.alcoholRampMin]. */
+const val DEFAULT_ALCOHOL_RAMP_MIN = 30.0
+
 data class Preset(
     val label: String,
     val amount: Double,
@@ -69,7 +72,15 @@ data class UserProfile(
     val rFemale: Double = 0.55,
     val beta: Double = 0.015,
     val legalBacLimit: Double = DEFAULT_LEGAL_BAC_LIMIT,
-    val alcoholRampMin: Double = 0.0,
+    /**
+     * Minutes over which a drink is absorbed. Ethanol reaches the blood through
+     * the stomach and small intestine over roughly 20-60 minutes, peaking around
+     * 30-45 minutes on an empty stomach (later, and lower, with food). Modelling
+     * absorption as instantaneous (0) would put the peak at the moment of the
+     * first sip and overstate BAC through the whole first hour, which is exactly
+     * the window someone is most likely to be looking at.
+     */
+    val alcoholRampMin: Double = DEFAULT_ALCOHOL_RAMP_MIN,
     val tolerance: Map<String, Double> = emptyMap(),
     val halfLifeOverrides: Map<String, Double> = emptyMap(),
 ) {

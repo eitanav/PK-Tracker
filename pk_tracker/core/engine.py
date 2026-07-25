@@ -28,6 +28,9 @@ from .substances import MODEL_ONE_COMPARTMENT_ER, MODEL_WIDMARK, Substance
 # Clearly an estimate, not a legal guarantee; user-configurable.
 DEFAULT_LEGAL_BAC_LIMIT = 0.05
 
+# Default alcohol absorption window (minutes). See UserProfile.alcohol_ramp_min.
+DEFAULT_ALCOHOL_RAMP_MIN = 30.0
+
 
 def to_hours(dt: datetime) -> float:
     """Absolute time in hours (POSIX seconds / 3600) for a tz-aware datetime."""
@@ -64,7 +67,12 @@ class UserProfile:
     r_female: float = 0.55
     beta: float = 0.015                     # alcohol elimination, g/dL/h
     legal_bac_limit: float = DEFAULT_LEGAL_BAC_LIMIT
-    alcohol_ramp_min: float = 0.0           # alcohol absorption ramp (min); 0 = instant
+    # Minutes over which a drink is absorbed. Ethanol reaches the blood through
+    # the stomach and small intestine over roughly 20-60 min, peaking around
+    # 30-45 min on an empty stomach (later and lower with food). Instantaneous
+    # absorption (0) would put the peak at the first sip and overstate BAC
+    # through the whole first hour.
+    alcohol_ramp_min: float = DEFAULT_ALCOHOL_RAMP_MIN
     tolerance: dict[str, float] = field(default_factory=dict)   # per substance id
     # Per-user elimination half-life override (hours), per substance id. Caffeine
     # clearance varies ~3x with smoking / oral contraceptives / genetics, so this

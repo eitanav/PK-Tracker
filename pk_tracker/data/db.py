@@ -17,7 +17,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from ..core.engine import Dose, UserProfile
+from ..core.engine import DEFAULT_ALCOHOL_RAMP_MIN, Dose, UserProfile
 from ..core.substances import (
     DEFAULT_LIBRARY_PATH,
     Preset,
@@ -99,7 +99,34 @@ class Database:
             if col not in existing:
                 self.conn.execute(f"ALTER TABLE substances ADD COLUMN {col} {col_type}")
         self._migrate_doses_sync_columns()
+        self._migrate_alcohol_ramp()
         self.conn.commit()
+
+    def _migrate_alcohol_ramp(self) -> None:
+        """One-time: adopt the corrected alcohol absorption default.
+
+        The old default was 0 -- instantaneous absorption -- which put the BAC
+        peak at the first sip and overstated it through the whole first hour.
+        Saved profiles carry that 0 explicitly, so the corrected default would
+        never reach an existing user. Bump it once, then leave a marker so that
+        someone who deliberately sets 0 afterwards keeps it.
+        """
+        if self.get_setting("migrated_alcohol_ramp"):
+            return
+        row = self.conn.execute(
+            "SELECT value FROM user_profile WHERE key = 'alcohol_ramp_min'"
+        ).fetchone()
+        if row is not None:
+            try:
+                stored = float(row[0])
+            except (TypeError, ValueError):
+                stored = None
+            if stored == 0.0:
+                self.conn.execute(
+                    "UPDATE user_profile SET value = ? WHERE key = 'alcohol_ramp_min'",
+                    (str(DEFAULT_ALCOHOL_RAMP_MIN),),
+                )
+        self.set_setting("migrated_alcohol_ramp", "1")
 
     def _migrate_doses_sync_columns(self) -> None:
         """Add the sync columns (uid/deleted/updated_at) to pre-existing dose

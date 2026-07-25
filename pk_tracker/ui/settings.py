@@ -410,7 +410,11 @@ class CalibrationDialog(QDialog):
         self.ramp.setSingleStep(5)
         self.ramp.setSuffix(" min")
         self.ramp.setValue(profile.alcohol_ramp_min)
-        self.ramp.setToolTip("Linear alcohol absorption window. 0 = instantaneous (default).")
+        self.ramp.setToolTip(
+            "How long a drink takes to reach the blood. Default 30 min "
+            "(empty stomach); 60-90 min after a meal. 0 = instantaneous, which "
+            "is not physiological and overstates BAC in the first hour."
+        )
         body.addRow("Alcohol absorption ramp", self.ramp)
         root.addLayout(body)
 

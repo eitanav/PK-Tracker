@@ -247,17 +247,26 @@ def widmark_bac(t, drink_events, r: float, mass_kg: float, beta: float = 0.015, 
     """Blood alcohol concentration (g/dL) under the Widmark model.
 
     Elimination is zero-order: BAC falls along a straight line at ``beta`` g/dL
-    per hour, floored at zero. By default each drink is modelled as instantaneous
-    absorption (a step up in BAC). Because elimination saturates, drinks do not
-    superpose the way linear doses do, so this walks the piecewise-linear
-    trajectory forward through the drink timeline.
+    per hour, floored at zero. This is real physiology, not a simplification --
+    alcohol dehydrogenase saturates at very low concentrations, so the falling
+    limb is genuinely linear rather than the exponential decay of a first-order
+    drug.
+
+    Absorption is spread linearly over ``ramp_h`` hours: ethanol reaches the
+    blood through the stomach and small intestine over roughly 20-60 min, so the
+    peak lands well after the first sip and is lower than an instantaneous model
+    predicts (elimination is already running while absorption continues -- the
+    same reason food lowers peak BAC). ``ramp_h = 0`` restores the older
+    instantaneous step.
 
     Single-drink height: A / (r * M * 10), where the factor of 10 converts the
     classic g/kg (~g/L) Widmark result into g/dL.
 
-    Optional refinement: ``ramp_h`` > 0 spreads each drink's absorption linearly
-    over that many hours (e.g. 0.33 h ≈ 20 min on a full stomach) by splitting it
-    into a handful of sub-bumps, which rounds off the sharp instantaneous peak.
+    The trajectory is exactly piecewise-linear: between consecutive breakpoints
+    (drink starts and absorption ends) the slope is a constant
+    ``absorption rate - beta``, so it is walked breakpoint to breakpoint rather
+    than approximated. Because elimination floors at zero, drinks do not
+    superpose the way linear doses do.
 
     Parameters
     ----------
@@ -266,7 +275,7 @@ def widmark_bac(t, drink_events, r: float, mass_kg: float, beta: float = 0.015, 
     r            : Widmark distribution ratio (~0.68 male, ~0.55 female).
     mass_kg      : body mass in kg.
     beta         : elimination rate in g/dL/h (default 0.015).
-    ramp_h       : linear absorption window in hours (default 0 = instantaneous).
+    ramp_h       : linear absorption window in hours (0 = instantaneous).
     """
     if r <= 0 or mass_kg <= 0:
         raise ValueError("r and mass_kg must be positive")
@@ -278,38 +287,43 @@ def widmark_bac(t, drink_events, r: float, mass_kg: float, beta: float = 0.015, 
     if not events:
         return _restore(np.zeros_like(t_arr), scalar)
 
-    if ramp_h and ramp_h > 0:
-        # Split each drink into sub-bumps spread evenly across the ramp window.
-        n_sub = 10
-        events = sorted(
-            (ti + ramp_h * k / n_sub, grams / n_sub)
-            for ti, grams in events
-            for k in range(n_sub)
-        )
+    # Drink heights in g/dL, and the window each one is absorbed over.
+    heights = [grams / (r * mass_kg * 10.0) for _, grams in events]
+    starts = [ti for ti, _ in events]
+    ramp = max(0.0, ramp_h)
 
-    event_t = np.array([e[0] for e in events], dtype=float)
-    bumps = np.array([e[1] for e in events], dtype=float) / (r * mass_kg * 10.0)
+    # Breakpoints: every time the net slope can change.
+    marks = sorted({*starts, *([ti + ramp for ti in starts] if ramp > 0 else [])})
+    bp = np.array(marks, dtype=float)
 
-    # BAC immediately *after* each drink, walking the trajectory forward and
-    # flooring at zero between drinks.
-    bac_after = np.empty(len(events))
-    prev_t = None
-    prev_b = 0.0
-    for i, (te, bump) in enumerate(zip(event_t, bumps)):
-        if prev_t is None:
-            b = bump
-        else:
-            b = max(0.0, prev_b - beta * (te - prev_t)) + bump
-        bac_after[i] = b
-        prev_t, prev_b = te, b
+    # Net slope on the segment starting at each breakpoint: everything being
+    # absorbed there, minus elimination.
+    slopes = np.empty(len(bp))
+    for k, bk in enumerate(bp):
+        rate = 0.0
+        if ramp > 0:
+            for ti, h in zip(starts, heights):
+                if ti <= bk < ti + ramp - 1e-12:
+                    rate += h / ramp
+        slopes[k] = rate - beta
+
+    # Walk the trajectory, applying instantaneous drinks (ramp == 0) on arrival.
+    value = np.empty(len(bp))
+    prev = 0.0
+    for k, bk in enumerate(bp):
+        if k > 0:
+            prev = max(0.0, value[k - 1] + slopes[k - 1] * (bk - bp[k - 1]))
+        if ramp <= 0:
+            prev += sum(h for ti, h in zip(starts, heights) if ti == bk)
+        value[k] = prev
 
     out = np.zeros_like(t_arr)
-    # For each query time, find the most recent drink at or before it, then
-    # decay from that drink's post-level (floored at zero).
-    idx = np.searchsorted(event_t, t_arr, side="right") - 1
+    idx = np.searchsorted(bp, t_arr, side="right") - 1
     valid = idx >= 0
     j = idx[valid]
-    out[valid] = np.maximum(0.0, bac_after[j] - beta * (t_arr[valid] - event_t[j]))
+    # After the last breakpoint the only term left is elimination.
+    seg_slope = np.where(j == len(bp) - 1, -beta, slopes[j])
+    out[valid] = np.maximum(0.0, value[j] + seg_slope * (t_arr[valid] - bp[j]))
     return _restore(out, scalar)
 
 

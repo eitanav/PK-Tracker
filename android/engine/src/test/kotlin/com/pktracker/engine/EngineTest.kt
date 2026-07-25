@@ -63,6 +63,30 @@ class ModelsTest {
         assertEquals(0.0, traj.at(1000.0), 0.0)
     }
 
+    @Test fun widmarkMatchesTheDesktopEngine() {
+        // Both apps must report the same BAC for the same drink. These values
+        // come from the Python engine (pk_tracker.core.models.widmark_bac) for
+        // 14 g at t=0, r=0.68, 70 kg, beta=0.015, ramp=0.5 h. If this drifts,
+        // the phone and the computer disagree about the same log.
+        val one = Models.WidmarkTrajectory(
+            listOf(0.0 to 14.0), r = 0.68, massKg = 70.0, beta = 0.015, rampH = 0.5,
+        )
+        assertEquals(0.0000000000, one.at(0.00), 1e-9)
+        assertEquals(0.0109558824, one.at(0.25), 1e-9)
+        assertEquals(0.0219117647, one.at(0.50), 1e-9)
+        assertEquals(0.0144117647, one.at(1.00), 1e-9)
+        assertEquals(0.0000000000, one.at(2.00), 1e-9)
+
+        // Overlapping absorption windows must accumulate the same way too.
+        val two = Models.WidmarkTrajectory(
+            listOf(0.0 to 14.0, 1.0 to 14.0),
+            r = 0.68, massKg = 70.0, beta = 0.015, rampH = 0.5,
+        )
+        assertEquals(0.0253676471, two.at(1.25), 1e-9)
+        assertEquals(0.0363235294, two.at(1.50), 1e-9)
+        assertEquals(0.0288235294, two.at(2.00), 1e-9)
+    }
+
     @Test fun widmarkTimeToTarget() {
         assertEquals(0.0, Models.widmarkTimeToTarget(0.02, 0.05), 0.0)
         assertEquals(2.0, Models.widmarkTimeToTarget(0.08, 0.05, 0.015), 1e-9)
@@ -104,8 +128,30 @@ class TimelineTest {
         val drink = Dose("alcohol", 14.0, "g", 0L)
         val tl = SubstanceTimeline(Substances.alcohol, listOf(drink), profile)
         assertEquals(0.0, tl.bodyAmountAt(0.5), 0.0)
-        assertTrue(tl.concentrationAt(0.0) > 0.0)
-        assertNull(tl.effectAt(0.0)) // no PD model for alcohol
+        // Absorption takes ~30 min by default, so read it once the drink is in.
+        assertTrue(tl.concentrationAt(0.5) > 0.0)
+        assertNull(tl.effectAt(0.5)) // no PD model for alcohol
+    }
+
+    @Test fun alcoholAbsorbsOverTimeRatherThanInstantly() {
+        val tl = SubstanceTimeline(
+            Substances.alcohol, listOf(Dose("alcohol", 14.0, "g", 0L)), profile,
+        )
+        // The first sip is not the peak: BAC climbs across the absorption window.
+        assertEquals(0.0, tl.concentrationAt(0.0), 1e-12)
+        assertTrue(tl.concentrationAt(0.25) > tl.concentrationAt(0.1))
+        assertTrue(tl.concentrationAt(0.5) > tl.concentrationAt(0.25))
+        // ...and falls afterwards.
+        assertTrue(tl.concentrationAt(0.75) < tl.concentrationAt(0.5))
+    }
+
+    @Test fun alcoholPeakMatchesTheLiterature() {
+        // One standard drink (14 g) in a 70 kg man: ~0.02-0.03 g/dL, ~30 min in.
+        val tl = SubstanceTimeline(
+            Substances.alcohol, listOf(Dose("alcohol", 14.0, "g", 0L)), profile,
+        )
+        val peak = tl.concentrationAt(0.5)
+        assertTrue("peak was $peak", peak in 0.018..0.030)
     }
 }
 
@@ -162,7 +208,8 @@ class SchedulerTest {
 
     @Test fun alcoholPredictsSoberTimes() {
         val tl = SubstanceTimeline(Substances.alcohol, listOf(Dose("alcohol", 40.0, "g", 0L)), profile)
-        val p = Scheduler.alcoholPredictions(tl, 0.0)!!
+        // Read after the ~30 min absorption window, once BAC has actually risen.
+        val p = Scheduler.alcoholPredictions(tl, 0.5)!!
         assertTrue(p.bacNow > 0.0)
         assertNotNull(p.timeToZeroHours)
         assertTrue(p.timeToZeroHours!! > 0.0)

@@ -15,6 +15,33 @@ and the project aims to follow [Semantic Versioning](https://semver.org/).
 
 Nothing yet — see [`TODO.md`](TODO.md) for the roadmap.
 
+## [2.1.0] - 2026-07-25
+
+### Fixed
+- **Alcohol absorption was instantaneous.** A drink jumped straight to its peak
+  BAC the moment it was logged, then fell in a straight line — so the chart was
+  a vertical step followed by a slope, and the first hour was overstated by
+  roughly a third. Ethanol actually reaches the blood over ~20–60 min, peaking
+  around 30–45 min on an empty stomach (later and lower after a meal, because
+  elimination runs while absorption continues). The absorption window now
+  defaults to 30 minutes instead of 0.
+  For one standard drink (14 g) in a 70 kg man, the peak moves from 0.029 g/dL
+  *at the moment of the first sip* to 0.022 g/dL *half an hour in* — which is
+  where the literature puts it. Existing profiles carry the old `0` explicitly,
+  so they are migrated once; set it back under Calibration if you want it.
+- `widmark_bac` now models the absorption window as **exact continuous
+  absorption** (a piecewise-linear walk over drink starts and absorption ends)
+  rather than ten discrete sub-doses, which had made the rising edge a visible
+  staircase (~13% ripple) instead of a smooth climb. Overlapping drinks
+  accumulate correctly.
+
+### Notes
+- The **falling** limb stays a straight line, and that is correct, not a bug:
+  alcohol elimination is zero-order, unlike the exponential decay of caffeine.
+  Tests now pin this down so it is not "fixed" into a curve later.
+- The desktop and Android engines are checked against each other to 1e-9, so
+  both apps report the same BAC for the same drink.
+
 ## [2.0.0] - 2026-07-25
 
 Brings the desktop app in line with the Android redesign, and connects the two.

@@ -118,12 +118,16 @@ def test_overload_not_triggered_by_a_single_coffee():
 def test_alcohol_predictions_clear_over_time():
     grams = 28.0
     tl = _tl("alcohol", [Dose("alcohol", grams, "g", NOW)], sex="male")
-    pred = scheduler.alcohol_predictions(tl, NOW)
+    # Absorption takes ~30 min by default; read the curve once it has peaked.
+    peak = NOW + timedelta(minutes=30)
+    pred = scheduler.alcohol_predictions(tl, peak)
     assert pred is not None
-    assert pred.bac_now == pytest.approx(grams / (0.68 * 70 * 10))
+    # Widmark height, less the elimination that ran during absorption.
+    expected = grams / (0.68 * 70 * 10) - 0.015 * 0.5
+    assert pred.bac_now == pytest.approx(expected, abs=1e-6)
     assert pred.over_limit is True
     # Sober (zero) comes strictly after dropping below the legal limit.
-    assert pred.time_to_zero > pred.time_to_limit > NOW
+    assert pred.time_to_zero > pred.time_to_limit > peak
 
 
 def test_alcohol_predictions_when_already_sober():

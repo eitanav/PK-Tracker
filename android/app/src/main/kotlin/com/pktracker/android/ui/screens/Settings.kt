@@ -303,6 +303,7 @@ fun SettingsScreen(vm: AppViewModel, modifier: Modifier = Modifier) {
             Text(stringResource(R.string.whats_new), color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(6.dp))
+            Text(stringResource(R.string.changelog_2_6_0), style = MaterialTheme.typography.bodySmall)
             Text(stringResource(R.string.changelog_2_5_0), style = MaterialTheme.typography.bodySmall)
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.changelog_2_4_0), style = MaterialTheme.typography.bodySmall,
