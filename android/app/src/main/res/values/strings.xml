@@ -140,6 +140,7 @@
     <string name="version">Version %1$s</string>
     <string name="download_latest">Download latest release</string>
     <string name="whats_new">What\'s new</string>
+    <string name="changelog_2_7_0">2.7.0 — Pull down on Now or Insights to sync (when cloud sync is on). The header no longer sits under the status bar on tablets, and the chart draws smoothly at every zoom instead of showing facets.</string>
     <string name="changelog_2_6_0">2.6.0 — Alcohol now absorbs realistically. A drink used to jump straight to its peak the moment you logged it; it now rises over about 30 minutes, like the real thing, so the first hour is no longer overstated.</string>
     <string name="changelog_2_5_0">2.5.0 — Sign in with Google (Settings → Cloud sync): link your anonymous account to your Google identity so your log follows you across devices and reinstalls.</string>
     <string name="changelog_2_4_0">2.4.0 — Cloud sync (opt-in, Settings → Cloud sync): your dose log now syncs across your devices through your private Firebase account, with anonymous sign-in.</string>

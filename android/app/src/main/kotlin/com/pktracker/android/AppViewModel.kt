@@ -49,6 +49,9 @@ data class AlcoholState(
     val bacNow: Double, val overLimit: Boolean, val underLimitMs: Long?, val zeroMs: Long?, val limit: Double,
 )
 
+/** Roughly how many curve samples should land across the visible plot, at any zoom. */
+private const val TARGET_VISIBLE_POINTS = 600.0
+
 class CurveData(
     val xHours: DoubleArray, val conc: DoubleArray, val effect: DoubleArray?,
     val simConc: DoubleArray?, val simEffect: DoubleArray?,
@@ -320,7 +323,17 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val pastSpan = maxOf(windowH, if (firstDoseH != null) (nowH - firstDoseH) + 1.0 else 2.0)
         val startH = nowH - minOf(pastSpan, 72.0)
         val endH = nowH + maxOf(windowH * 1.5, 12.0)
-        val n = ((endH - startH) * 12.0).toInt().coerceIn(240, 900)
+        // Sample density follows the *visible* window rather than the whole
+        // pannable range. A fixed samples-per-hour made the most zoomed-in view
+        // the most jagged one -- at a 4 h window only ~60 points landed across
+        // the plot, so smooth curves drew as visible facets. Targeting a fixed
+        // number of points on screen keeps the line smooth at every zoom.
+        // The ceiling matters most when a long history is viewed through a small
+        // window (72 h of data, 4 h on screen), where the samples are spread
+        // thinnest. Drawing only walks the visible slice, and this recomputes at
+        // most every 30 s, so a generous ceiling costs little.
+        val perHour = TARGET_VISIBLE_POINTS / windowH
+        val n = ((endH - startH) * perHour).toInt().coerceIn(600, 8000)
         val res = tl.curve(startH, endH, n)
         val concDisp = DoubleArray(n) { res.concentration[it] * sub.concScale }
         val peak = tl.personalPeakEffect(nowH)

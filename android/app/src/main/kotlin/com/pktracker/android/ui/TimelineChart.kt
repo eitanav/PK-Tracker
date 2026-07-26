@@ -129,28 +129,41 @@ fun TimelineChart(
             drawLine(grid, Offset(plotLeft, y), Offset(plotRight, y), 1f)
         }
 
+        // Only the visible slice is worth building a Path for. The curve is
+        // sampled densely enough to stay smooth when zoomed in, which means the
+        // full array can run to a few thousand points -- walking all of them on
+        // every frame of a pan would be wasted work. One sample of margin on
+        // each side keeps the line entering and leaving the plot correctly.
+        var i0 = curve.xHours.indexOfFirst { it >= viewStart } - 1
+        if (i0 < 0) i0 = 0
+        var i1 = curve.xHours.indexOfLast { it <= viewEnd } + 1
+        if (i1 > n - 1) i1 = n - 1
+
         fun drawSeries(mapY: (Double) -> Float, values: DoubleArray, color: Color, fill: Boolean, width: Float) {
-            val ys = FloatArray(n) { mapY(values[it]) }
-            if (fill && nowIdx >= 1) {
+            if (i1 <= i0) return
+            val ys = FloatArray(n) { if (it in i0..i1) mapY(values[it]) else 0f }
+            val pastEnd = minOf(nowIdx, i1)
+            val futStart = maxOf(nowIdx, i0)
+            if (fill && pastEnd > i0) {
                 val area = Path().apply {
-                    moveTo(xs[0], plotBottom)
-                    for (i in 0..nowIdx) lineTo(xs[i], ys[i])
-                    lineTo(xs[nowIdx], plotBottom)
+                    moveTo(xs[i0], plotBottom)
+                    for (i in i0..pastEnd) lineTo(xs[i], ys[i])
+                    lineTo(xs[pastEnd], plotBottom)
                     close()
                 }
                 drawPath(area, color.copy(alpha = 0.16f))
             }
-            if (nowIdx >= 1) {
+            if (pastEnd > i0) {
                 val past = Path().apply {
-                    moveTo(xs[0], ys[0])
-                    for (i in 1..nowIdx) lineTo(xs[i], ys[i])
+                    moveTo(xs[i0], ys[i0])
+                    for (i in (i0 + 1)..pastEnd) lineTo(xs[i], ys[i])
                 }
                 drawPath(past, color, style = Stroke(width))
             }
-            if (nowIdx < n - 1) {
+            if (futStart < i1) {
                 val fut = Path().apply {
-                    moveTo(xs[nowIdx], ys[nowIdx])
-                    for (i in (nowIdx + 1) until n) lineTo(xs[i], ys[i])
+                    moveTo(xs[futStart], ys[futStart])
+                    for (i in (futStart + 1)..i1) lineTo(xs[i], ys[i])
                 }
                 drawPath(fut, color, style = Stroke(width, pathEffect = dashed))
             }

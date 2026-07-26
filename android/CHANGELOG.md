@@ -9,6 +9,30 @@ tag `android-vX.Y.Z`, matching `versionName` in `app/build.gradle.kts`. The
 in-app **Settings → About** card links straight to that releases page and
 mirrors this changelog.
 
+## [2.7.0] - 2026-07-25
+
+### Added
+- **Pull down to sync.** Swipe down on Now or Insights to reconcile with the
+  cloud, with the spinner held for exactly as long as the round trip takes.
+  The gesture only appears when cloud sync is on — with sync off there is
+  nothing to fetch, and a gesture that does nothing is worse than none.
+  (Dragging the chart still pans it; the chart consumes its own gestures.)
+
+### Fixed
+- **The header sat underneath the status bar.** The window is drawn
+  edge-to-edge, but the top bar used a fixed 10dp top padding and never
+  consumed the status-bar inset, so the clock and notification icons landed on
+  top of the PK Tracker logo — in both orientations, most visibly on tablets.
+  The bar now insets itself properly, and content also clears the horizontal
+  insets so a landscape cutout cannot overlap it either.
+- **The chart drew as visible facets.** Sample density was a fixed 12 points
+  per hour of the whole pannable range, while only the chosen window is on
+  screen — so zooming *in* made the line **coarser**, exactly backwards. At a
+  4-hour window barely 60 points landed across the plot (~23 px per segment).
+  Density now follows the visible window, targeting ~600 points on screen at
+  any zoom, and drawing walks only the visible slice so the denser curve costs
+  nothing per frame.
+
 ## [2.6.0] - 2026-07-25
 
 ### Fixed

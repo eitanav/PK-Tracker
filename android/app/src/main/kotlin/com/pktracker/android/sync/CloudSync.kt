@@ -50,28 +50,12 @@ object CloudSync {
         val app = context.applicationContext
         scope.launch {
             try {
-                val auth = FirebaseAuth.getInstance()
-                if (auth.currentUser == null) auth.signInAnonymously().await()
-                val uid = auth.currentUser?.uid ?: return@launch
+                val uid = signedInUid() ?: return@launch
                 val dao = AppDatabase.get(app).doseDao()
-                val col = doses(uid)
-
-                // 1. Pull the current cloud state and merge it in (last-write-wins).
-                val remote = col.get().await()
-                val remoteUpdatedAt = HashMap<String, Long>()
-                for (doc in remote.documents) {
-                    remoteUpdatedAt[doc.id] = doc.getLong("updatedAt") ?: 0L
-                    mergeRemote(dao, doc)
-                }
-                // 2. Push local rows the cloud is missing or has an older copy of.
-                for (d in dao.allForSync()) {
-                    if (d.uid.isEmpty()) continue
-                    val ru = remoteUpdatedAt[d.uid]
-                    if (ru == null || d.updatedAt > ru) col.document(d.uid).set(toMap(d)).await()
-                }
+                reconcile(dao, doses(uid))
                 active = true
-                // 3. Keep merging remote changes as they arrive.
-                registration = col.addSnapshotListener { snap, _ ->
+                // Keep merging remote changes as they arrive.
+                registration = doses(uid).addSnapshotListener { snap, _ ->
                     if (snap == null) return@addSnapshotListener
                     scope.launch {
                         for (change in snap.documentChanges) mergeRemote(dao, change.document)
@@ -80,6 +64,43 @@ object CloudSync {
             } catch (e: Exception) {
                 active = false
             }
+        }
+    }
+
+    /**
+     * Reconcile with the cloud and *wait for it to finish*, so a pull-to-refresh
+     * can keep its spinner up for exactly as long as the work takes. Returns
+     * true when the round trip succeeded.
+     */
+    suspend fun refreshNow(context: Context): Boolean {
+        val app = context.applicationContext
+        return try {
+            val uid = signedInUid() ?: return false
+            reconcile(AppDatabase.get(app).doseDao(), doses(uid))
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    private suspend fun signedInUid(): String? {
+        val auth = FirebaseAuth.getInstance()
+        if (auth.currentUser == null) auth.signInAnonymously().await()
+        return auth.currentUser?.uid
+    }
+
+    /** Pull the cloud in (last-write-wins), then push what it is missing. */
+    private suspend fun reconcile(dao: DoseDao, col: CollectionReference) {
+        val remote = col.get().await()
+        val remoteUpdatedAt = HashMap<String, Long>()
+        for (doc in remote.documents) {
+            remoteUpdatedAt[doc.id] = doc.getLong("updatedAt") ?: 0L
+            mergeRemote(dao, doc)
+        }
+        for (d in dao.allForSync()) {
+            if (d.uid.isEmpty()) continue
+            val ru = remoteUpdatedAt[d.uid]
+            if (ru == null || d.updatedAt > ru) col.document(d.uid).set(toMap(d)).await()
         }
     }
 
